@@ -115,4 +115,4 @@ python build.py     # 生成 dist/，输出 "OK  chapters=25  chinese_chars=..."
 
 ## 许可
 
-见 [LICENSE](LICENSE)。
+[MIT License](LICENSE) © 2026 btroops
