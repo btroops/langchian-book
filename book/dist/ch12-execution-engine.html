@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 12 章　执行引擎：超步模型与调度</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="layout">
+  <aside class="side"><a class="side-brand" href="index.html"><b>智能体运行时原理</b><span>从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part">第一部分　问题空间<em>框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html"><i>01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html"><i>02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html"><i>03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html"><i>04</i>LangChain 家族的全景与演进脉络</a><div class="side-part">第二部分　LangChain 的抽象原理<em>组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html"><i>05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html"><i>06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html"><i>07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html"><i>08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html"><i>09</i>检索增强（RAG）的原理</a><div class="side-part">第三部分　LangGraph：从链到图<em>状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html"><i>10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html"><i>11</i>状态与通道：图的数据模型</a><a class="item on" href="ch12-execution-engine.html"><i>12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html"><i>13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html"><i>14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html"><i>15</i>多智能体拓扑</a><div class="side-part">第四部分　依赖族与生态<em>契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html"><i>16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html"><i>17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html"><i>18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html"><i>19</i>部署与运行时形态</a><div class="side-part">第五部分　原理迁移<em>超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html"><i>20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html"><i>21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html"><i>22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html"><i>23</i>结语：框架会变，原理不会</a><div class="side-part">附录<em>速查与自检</em></div><a class="item" href="apa-glossary.html"><i>A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html"><i>B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot">共 23 章 + 2 个附录 · 原理优先<br>零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main">
+<article>
+<h1>第 12 章　执行引擎：超步模型与调度</h1>
+<div class="tocbox"><b>本章小节</b>
+<ul>
+<li><a href="#_1">引子</a></li>
+<li><a href="#_2">超步执行模型</a></li>
+<li><a href="#_3">调度决策</a></li>
+<li><a href="#_4">确定性从何而来</a></li>
+<li><a href="#_5">与工作流引擎的对比</a></li>
+<li><a href="#_6">并发控制的现实约束</a></li>
+<li><a href="#_7">常见误区与排查</a></li>
+<li><a href="#_8">本章要点</a></li>
+<li><a href="#_9">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote>
+<p>并行节点加同步边界，是可复现性的来源。理解了这一章，你就能解释"为什么同一份检查点重放两次结果一样"。</p>
+</blockquote>
+<h2 id="_1">引子</h2>
+<p>一个让人困惑的现象：同一个检查点重放两次，得到的结果完全一致；但如果把同一段逻辑单独跑两次（不经过重放），结果会不一样。</p>
+<p>很多人会把这个现象归结为"框架做了某种缓存"。实际原因更朴素：<strong>重放时被恢复的不只是数据，还有调度决策。</strong> 引擎知道上一轮激活了哪些节点、边是怎么求值的、合并发生在什么时候。恢复后它按同样的顺序重做同样的决策，而节点是纯函数，所以结果一致。</p>
+<p>反过来，如果不经过重放而是"重新跑一遍逻辑"，那么每一个依赖外部世界的环节（模型采样、接口返回、当前时间）都会给出新的值，路径随之分叉。</p>
+<p>这个对比揭示了执行引擎的核心职责：<strong>把"执行"变成一件可确定的、可重演的事。</strong> 这一章要讲清它是怎么做到的，以及这个能力有哪些边界。</p>
+<h2 id="_2">超步执行模型</h2>
+<p>执行引擎的节拍是这样的循环：</p>
+<div class="dg">
+  <div class="dg-flow">
+    <div class="dg-box">1 确定本轮激活集<br><small>由上一轮的边决定</small></div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box">2 并行执行节点<br><small>各自产出增量</small></div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box">3 同步等待全部完成</div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box dg-alt">4 按归约器合并状态</div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box dg-hl">5 边求值，生成下一轮激活集</div>
+  </div>
+</div>
+
+<p>这个模型有一个学术名字叫整体同步并行（BSP），它在大规模图计算里被验证过。它的核心取舍是：<strong>用"每轮都要等最慢的节点"换取"每轮结束时的状态是完全确定的"。</strong></p>
+<p>这个取舍非常关键。BSP 放弃了异步执行可能带来的效率，换来的是三个工程上极其宝贵的能力。</p>
+<p><strong>能力一：状态在每个同步点都是自洽的。</strong> 因为合并是统一发生的，不存在"状态处在中间态"的时刻。这让快照变得有意义——你可以在任何同步点保存状态，而且保存下来的是一份逻辑上完整的状态。</p>
+<p><strong>能力二：并行结果是确定的。</strong> 同轮内的节点互不可见，所以它们的执行顺序不影响结果（前提是归约器设计正确）。如果是异步执行，节点完成顺序会影响它能读到的状态，结果就不确定了。</p>
+<p><strong>能力三：可复现的重放。</strong> 由于调度决策（激活集、边求值）是确定的，只要节点是纯函数，整条执行路径就是确定的。</p>
+<p>与之相对的异步模型（谁先完成谁先推进）在吞吐上更好，但会引入"同一份输入可能走出不同路径"的问题。对一个需要人工审批、需要审计、需要事后复盘的系统来说，这个代价通常不可接受。<strong>所以这里的选择不是性能取向，而是可靠性取向。</strong></p>
+<h2 id="_3">调度决策</h2>
+<p>"下一步执行谁"这件事在超步模型里分成三个环节。</p>
+<p><strong>环节一：激活集的确定。</strong> 一轮开始时，引擎知道哪些节点应该执行。这个集合来自上一轮结束时边的求值结果，或者来自开始节点的初始激活。<strong>激活集是一个集合而不是一个序列</strong>——同轮节点之间没有顺序，这是"并行"的准确含义。</p>
+<p><strong>环节二：边在什么时刻求值。</strong> 边的求值发生在一轮结束、状态合并完成之后。这个时机很重要：<strong>条件边看到的是合并后的完整状态</strong>，而不是某个节点的局部结果。所以条件边可以放心地依据状态里的任意字段做判断，包括本轮多个节点共同产出的内容。</p>
+<p><strong>环节三：终止判定。</strong> 终止在超步模型里会有几种表现，需要区分清楚。</p>
+<p><strong>正常终止</strong>是激活集为空——没有任何节点被激活，且存在已到达的出口。这是设计正确的流程结束的方式。</p>
+<p><strong>异常终止</strong>是达到某个约束上限（步数上限、成本上限、时间上限）。这不是流程设计好的结束，而是保护机制触发，它必须以明确的信号告知外部，否则用户会以为任务成功完成了。</p>
+<p><strong>静默挂起</strong>是一种危险的状态：激活集不为空却没有边界可以被激活。这通常是边定义不完整导致的（比如某个条件分支的两条路都没有覆盖所有情况），表现为流程"卡住不动"。这类问题在测试环境里如果只覆盖了正常路径就不容易被发现。</p>
+<div class="dg">
+  <div class="dg-col">
+    <div class="dg-box">一轮结束，状态已合并</div>
+    <div class="dg-arw">↓ 边求值</div>
+    <div class="dg-box dg-alt">下一轮激活集为空？</div>
+    <div class="dg-arw">↓ 是 → 检查是否到达出口</div>
+    <div class="dg-box">到达出口 → 正常终止</div>
+    <div class="dg-box dg-alt">未到出口 → 静默挂起（设计缺陷）</div>
+    <div class="dg-arw">↓ 否 → 检查约束上限</div>
+    <div class="dg-box dg-hl">超限 → 异常终止并显式上报</div>
+  </div>
+</div>
+
+<h2 id="_4">确定性从何而来</h2>
+<p>这是本章最有价值的分析。要能回答"为什么重放一致"，就要先知道有哪些东西会破坏确定性。</p>
+<table>
+<thead>
+<tr>
+<th>破坏源</th>
+<th>表现</th>
+<th>是否被检查点覆盖</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型采样</td>
+<td>同一提示两次输出不同</td>
+<td>重放时被覆盖（使用已记录的调用）</td>
+</tr>
+<tr>
+<td>外部接口返回</td>
+<td>同一请求两次返回不同</td>
+<td>重放时被覆盖（使用已记录的结果）</td>
+</tr>
+<tr>
+<td>当前时间</td>
+<td>同一逻辑在不同时刻结果不同</td>
+<td>不覆盖，需要显式冻结或作为状态保存</td>
+</tr>
+<tr>
+<td>随机数</td>
+<td>每次执行随机路径不同</td>
+<td>通常是节点内部的私有逻辑，重放时被跳过</td>
+</tr>
+<tr>
+<td>集合遍历顺序</td>
+<td>字典/集合的遍历顺序可能不同</td>
+<td>不覆盖，取决于语言实现</td>
+</tr>
+<tr>
+<td>并发完成顺序</td>
+<td>同轮节点完成顺序不同</td>
+<td><strong>被超步模型消除</strong></td>
+</tr>
+<tr>
+<td>节点内部状态</td>
+<td>节点有自己的成员变量</td>
+<td>不覆盖，属于反模式</td>
+</tr>
+</tbody>
+</table>
+<p>这张表给出了一个极其实用的结论：<strong>检查点的作用是"把已发生的外部交互变成可重放的数据"，而不是"消除随机性"。</strong> 重放时不会再去调用模型，而是使用当时记录下来的调用结果。所以重放的一致性是"历史重演"，不是"重新计算得到相同答案"。</p>
+<p>这也解释了另一个常见疑问：为什么不建议"重跑一遍来复现问题"？因为重跑会重新采样、重新调用接口、重新读取当前时间，路径大概率不同。<strong>要复现，就要回放，不要重跑。</strong></p>
+<p>由此可以推出几条设计约束。</p>
+<p><strong>约束一：节点应该是纯函数。</strong> 它读状态、做计算、返回增量。凡是与外部世界的交互，都应该通过可被记录的方式发生（模型调用、工具调用这些都在引擎的记录范围内）。节点自己偷偷调接口、读时钟、用随机数，会让重放失真。</p>
+<p><strong>约束二：时间必须显式对待。</strong> 如果逻辑依赖"现在"，那么"现在"应该作为一个状态字段在流程开始时确定下来，后续使用这个字段而不是重新读时钟。这样重放时时间就被冻结在历史值上。</p>
+<p><strong>约束三：不要在节点之间依赖外部共享的可变状态。</strong> 比如两个节点都写同一个内存缓存，或者读同一个全局配置。这类依赖不在引擎的视野内，会破坏重放。</p>
+<h2 id="_5">与工作流引擎的对比</h2>
+<p>这套模型与成熟的工作流引擎（比如数据管道调度、通用工作流编排）有很强的相似性，也有本质差异。对比有助于看清哪些设计是从别处继承的、哪些是新的。</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>通用工作流引擎</th>
+<th>智能体执行引擎</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>任务粒度</td>
+<td>相对固定的作业单元</td>
+<td>单次模型调用或工具调用，粒度更细</td>
+</tr>
+<tr>
+<td>图的形状</td>
+<td>多为 DAG</td>
+<td>允许环，需显式终止控制</td>
+</tr>
+<tr>
+<td>输出确定性</td>
+<td>任务输出确定</td>
+<td>任务输出概率性，需要契约校验</td>
+</tr>
+<tr>
+<td>状态规模</td>
+<td>状态较小，多为参数与元数据</td>
+<td>状态含消息历史，规模大且增长快</td>
+</tr>
+<tr>
+<td>数据依赖</td>
+<td>显式参数传递为主</td>
+<td>共享状态 + 增量合并</td>
+</tr>
+<tr>
+<td>执行次数</td>
+<td>一般一次</td>
+<td>可能在同一节点反复执行（循环）</td>
+</tr>
+<tr>
+<td>成本模型</td>
+<td>主要是一次性算力</td>
+<td>每次调用都产生费用，需实时预算控制</td>
+</tr>
+<tr>
+<td>暂停目的</td>
+<td>等待依赖、等待资源</td>
+<td>等待人类决策、等待外部条件</td>
+</tr>
+<tr>
+<td>可复现性</td>
+<td>靠版本与快照</td>
+<td>靠检查点重放（因外部调用不可重算）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>最大的不同在最后一行。</strong> 工作流引擎的"重跑"通常是可行的，因为任务是确定性的——同样的输入会产生同样的输出。而智能体引擎不行：模型调用不可重算（会得到不同结果），并且如果重跑，副作用会被重复触发。所以<strong>检查点在这里不是优化，而是可复现性的唯一实现方式</strong>。</p>
+<p>另一个重要不同是<strong>成本是执行时产生的</strong>。工作流的成本主要在部署资源上，而智能体的成本随执行路径实时增长。因此预算控制必须是执行引擎的内置能力，而不是外部的监控告警——等你收到告警，钱已经花掉了。</p>
+<h2 id="_6">并发控制的现实约束</h2>
+<p>引擎提供了并行能力，但现实世界里并行的约束来自外部。这些约束必须在设计时就被处理，而不是等到限流报错。</p>
+<p><strong>约束一：外部速率限制。</strong> 模型的接口有每秒请求数与 token 速率的上限。同一轮并行激活十个节点会同时发起十个调用，直接打满限流。应对方式有三种：设置并发上限（牺牲并行度保稳定）、把调用排队（引入队列层）、按重要性分级（关键路径优先，其余退避）。选择依据是"这个并行是否真的必要"——很多时候并行只是因为"顺手"，并没有真实的延迟要求。</p>
+<p><strong>约束二：共享资源。</strong> 如果多个节点要写同一个外部系统，并行会带来竞态。典型场景是多个节点往同一张表插数据、往同一个文件追加、调用同一个有状态的服务。这类问题的标准解法是<strong>把这部分操作串行化</strong>——在图的结构上让它们分属不同超步，或者在上层加锁。</p>
+<p><strong>约束三：幂等性。</strong> 这是并发和恢复共同要求的性质。因为节点可能被重放（恢复时）、可能被重试（失败时），所以有副作用的操作必须能安全地重复执行。实现方式通常是"幂等键 + 外部系统去重"，或者"先查状态确认未执行，再执行，再记录已执行"。</p>
+<p>注意最后一种方式的一个陷阱：<strong>"查—执行—记录"这三步如果不在同一个事务里，依然是竞态的。</strong> 正确的做法是把"已执行的记录"当作执行的一部分原子地写入，或者依赖外部系统自身的幂等能力（比如幂等键由外部服务去重）。第 13 章会展开这一点。</p>
+<p><strong>约束四：并行带来的调试难度。</strong> 并行执行的时间线不再是一条直线，日志会交错，问题难以重现。这是并行的隐性成本，它不该被忽略。实用的缓解办法是：并行度尽量小，节点尽量短，并保证每一步都有完整的状态快照可查。</p>
+<h2 id="_7">常见误区与排查</h2>
+<ul>
+<li><strong>"重跑一遍就能复现问题"</strong> → 症状：本地怎么都复现不了线上问题。根因：重跑会重新采样、重新调用外部接口。修法：用检查点回放，而不是重跑。</li>
+<li><strong>"节点里读一下当前时间很方便"</strong> → 症状：重放时结果与当时不一致，出现无法解释的差异。根因：时间不在引擎的记录范围内。修法：把时间作为状态字段在流程开始时确定。</li>
+<li><strong>"流程卡住不报错，说明只是慢"</strong> → 症状：任务长时间无进展也无异常。根因：静默挂起——激活集非空但没有可达出口。修法：检查条件分支是否覆盖了所有情况；为分支设置兜底路径。</li>
+<li><strong>"并行越多越快"</strong> → 症状：触发限流，整批任务一起失败。根因：忽略了外部速率约束。修法：设定并发上限，或改为队列排队。</li>
+<li><strong>"同一个外部表多个节点并行写没问题"</strong> → 症状：偶发数据错乱或死锁。根因：共享资源竞态。修法：让这些操作分属不同超步，显式串行化。</li>
+<li><strong>"约束上限只在测试环境配得小，生产配得大"</strong> → 症状：生产环境偶尔出现异常的长时间循环，账单激增。根因：约束上限脱离实际预算。修法：上限按成本预算设定，并在触发时显式上报。</li>
+</ul>
+<h2 id="_8">本章要点</h2>
+<ul>
+<li>超步模型（BSP）的取舍是"每轮等最慢节点"换"每个同步点的状态确定性"，这是可靠性取向的选择。</li>
+<li>同轮节点互不可见，边隐含了产生新超步的含义；一轮耗时由最慢节点决定。</li>
+<li>调度分三环节：激活集的确定、边在合并后求值、终止判定。终止有正常、异常、静默挂起三种，后两种都必须显式上报。</li>
+<li>检查点的作用是"把已发生的外部交互变成可重放的数据"，而不是消除随机性。所以复现要靠回放，不能靠重跑。</li>
+<li>破坏确定性的来源中，并发完成顺序被超步模型消除；时间、随机、节点内部状态不被覆盖，需要显式设计。</li>
+<li>与通用工作流引擎的最大差异在可复现性实现方式：智能体的模型调用不可重算，检查点是唯一手段；且成本是执行时实时产生的，预算控制必须内置。</li>
+<li>并发的现实约束有四条：外部速率限制、共享资源竞态、幂等性要求、调试难度上升。</li>
+</ul>
+<h2 id="_9">迁移视角：如果不用这个框架</h2>
+<p>这一章的三个概念可以独立于任何框架使用。</p>
+<p><strong>第一个概念：同步边界是确定性的来源。</strong> 任何并行系统都面临"如何让结果可预期"的问题。整体同步的答案是"在边界上对齐"，异步的答案是"让操作可交换"。前者实现简单、结果确定，代价是等待；后者吞吐高，代价是设计要求高。你在设计任何并行流程时都应该明确自己选了哪一条，而不是混着来。</p>
+<p><strong>第二个概念：重放与重跑是两件不同的事。</strong> 这个区分在分布式系统里早就存在了（事件溯源的回放、消息队列的重投递），但在智能体场景里它的重要性被放大，因为外部调用既昂贵又不可重算。<strong>凡是有副作用和不确定外部调用的系统，都应当把"可回放"当作一等能力</strong>：记录足够的信息，使得任何一次执行都能被精确重演。</p>
+<p><strong>第三个概念：预算是运行时的一等公民。</strong> 传统系统里资源成本与执行时间的关系是间接的，可以把成本控制放在外部（监控、限额）。智能体系统里成本与执行路径直接成正比，所以预算必须是执行引擎的内置能力，在每一步都能被检查、被中断。这个"把成本变成执行约束"的思路，在任何按使用量计费的自动化系统里都适用。</p>
+<p>最后一条关于调试的经验值得带走：<strong>并行系统的日志必须带超步标识和节点标识。</strong> 因为时间线是交错的，按时间读日志会得到误导性的因果关系。按超步分组读，才能看出"这一轮发生了什么"。这是排查并行问题时最省力的一个习惯。</p>
+<div class="pager"><a class="prev" href="ch11-state-and-channels.html"><span>上一章</span><b>第 11 章　状态与通道：图的数据模型</b></a><a class="next" href="ch13-persistence-and-checkpoints.html"><span>下一章</span><b>第 13 章　持久化与检查点：Agent 能力的地基</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

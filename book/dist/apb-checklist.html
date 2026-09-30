@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="POmPAyApt1mrDnD4JhIjlC">
+<head data-page-node-id="8HRpx9ChrtoRjjuq0NCsvo">
+<meta charset="utf-8" data-page-node-id="Iy2Ot3DBujJ7pgCgBHIGEo">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="X5r4PCa0INSjeyEZ1DTqmn">
+<title>附录 B　原理速查与自检清单</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body data-page-node-id="xHmNmjMPAXaTXB5x8UndQt">
+<div class="layout" data-page-node-id="DN9oL9RqFMcO4zmvg0kYU6">
+  <aside class="side" data-page-node-id="bsaUVRHvdGUSAPG1Ji0O10"><a class="side-brand" href="index.html" data-page-node-id="2ZW1LGzcbXaa49ohPxgbaK"><b data-page-node-id="WJEf2rvGd8HFFpQXSCFluH">智能体运行时原理</b><span data-page-node-id="T83aqefZ1IELf9fKFHaBEH">从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part" data-page-node-id="5SYLEtSR5BcS5MDPe0ZoAa">第一部分　问题空间<em data-page-node-id="kZANtzWWspfcmGwqJB8wId">框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html" data-page-node-id="nRa2NIZcnNp5xCLoyZTkvO"><i data-page-node-id="JlirGExtUFmLKN7Jz64D7K">01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html" data-page-node-id="hQGBzjVDtuAyaJUP6kkpt4"><i data-page-node-id="IWesoPLV6ztCUGfHmhhnhZ">02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html" data-page-node-id="2LqEDjlTJYYTQsTofq9DTQ"><i data-page-node-id="UVYdBtIC8WTkJccCGqg9JV">03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html" data-page-node-id="CgA9QF22KGeRwG9YS5lppK"><i data-page-node-id="TVaMOvr71dhbEFneWcVN4T">04</i>LangChain 家族的全景与演进脉络</a><div class="side-part" data-page-node-id="wGzeNUsxwWmbKViptxPZqm">第二部分　LangChain 的抽象原理<em data-page-node-id="BI5SGeUq7CrIbgd8ze9i0S">组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html" data-page-node-id="thZRmRSFzOw2HNh5x2CkbO"><i data-page-node-id="3iomqiS5TwI7dZvA6po0mj">05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html" data-page-node-id="9UBl7GC2SsThXPGJWIbnvA"><i data-page-node-id="cSTxcR4i5rYXkS13ZH3KSu">06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html" data-page-node-id="ZwTtya6yzOdWleR8gGRSus"><i data-page-node-id="X3GcZBKz7UBidHADEtrjoV">07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html" data-page-node-id="I3CyADa9pYLe0fwdfw5vdB"><i data-page-node-id="vcIOENlBJHxLixwCAvxFLY">08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html" data-page-node-id="GxMVJFUOAnSAod5mENWm0a"><i data-page-node-id="nhVcYEFMibauY5tTZZR2GM">09</i>检索增强（RAG）的原理</a><div class="side-part" data-page-node-id="3PgwqAtFv89T3QjFKN2CFq">第三部分　LangGraph：从链到图<em data-page-node-id="e8TiOD9c5uqPwmGRjDCL93">状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html" data-page-node-id="gkGJJ25yY0s5A5P11fDuxn"><i data-page-node-id="GKd3sqqOo5Vs6r46US4COF">10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html" data-page-node-id="t0sxWVGr7vKzOob6biEyId"><i data-page-node-id="bqF7lFQRJejHx8dpDFHXvS">11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html" data-page-node-id="LVLvlqWN0FzGomlGPDlD62"><i data-page-node-id="BIjBnH4E06yKPC9LvN6tnN">12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html" data-page-node-id="uC0pI7O4J4oJ0Bqb6l9rL5"><i data-page-node-id="cdmhs9hJEsVLMPoEi59Di0">13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html" data-page-node-id="WmmZHrGZOX6J4GzAkxDgGV"><i data-page-node-id="WMJybRDdpDWWKSCJokz4yK">14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html" data-page-node-id="pzCXhqBqbIuQXSIpV8PWVI"><i data-page-node-id="MRzgdxNYqnsG1QXe6101WT">15</i>多智能体拓扑</a><div class="side-part" data-page-node-id="4ePDDimkCY0JWU3OinzzGG">第四部分　依赖族与生态<em data-page-node-id="4qsYVtqpsIqJweBtjjTAWA">契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html" data-page-node-id="qUHo7cQmo9UrHOXJM6H5gF"><i data-page-node-id="0Ozpo8xQR40XrNpdAzNBPd">16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html" data-page-node-id="xIif4AcKMqd3qbZj2RPMx7"><i data-page-node-id="7a1hR578jgkeliYprbh25C">17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html" data-page-node-id="8RFm5DGUmUXWUBBPpnkneC"><i data-page-node-id="Jo6ScHrmFcPHk0K92Ymapj">18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html" data-page-node-id="zQflsGoc1yWgJqaKA3oKyC"><i data-page-node-id="PEfIKCb9rsDY9BILseBbyy">19</i>部署与运行时形态</a><div class="side-part" data-page-node-id="HRBEqWjitYM821BZkgYRR6">第五部分　原理迁移<em data-page-node-id="aDOd2P1wDq2ZwF0pt5wOOx">超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html" data-page-node-id="1A29O5YGm4EXi8aDx2stVy"><i data-page-node-id="BivbvzSuv2xKEGv6ecLapP">20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html" data-page-node-id="UjhoDZ0YLwXqWwAhYfWEO2"><i data-page-node-id="IYp2PrsftUl5DuodPpAEJt">21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html" data-page-node-id="Ue1UITKPWE4kEUCO7VdCm9"><i data-page-node-id="qvVnzxn5SsDaUSFbzGKA6b">22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html" data-page-node-id="auWdcBpdUqoq0rHsHWEYwJ"><i data-page-node-id="WpwsUJeCf0CC0Jk8FlqKyg">23</i>结语：框架会变，原理不会</a><div class="side-part" data-page-node-id="9fNG6xyob7df8il3EXrgqB">附录<em data-page-node-id="9WpfSgplAyXVd5uyshTL6h">速查与自检</em></div><a class="item" href="apa-glossary.html" data-page-node-id="FswlK8TJrG5gAVuEKsDgMT"><i data-page-node-id="9JBhBa6wuhIBtRLl4Wi54p">A</i>附录 A　术语表</a><a class="item on" href="apb-checklist.html" data-page-node-id="v6j7DnoM9vBByJq7MYBHrS"><i data-page-node-id="AAitPJyDBPpQH7qaOV6lv4">B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot" data-page-node-id="Vyid3u8uhCy0wHLLWbxE8h">共 23 章 + 2 个附录 · 原理优先<br data-page-node-id="F3j0Z2gUsRfIaBYdKxG7Ol">零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main" data-page-node-id="KXVYH6dpuq064ijBuwUtWf">
+<article data-page-node-id="HjjXGdv50G6AIg9avxBuCu">
+<h1 data-page-node-id="JvZnkBVtbEbLT0580Yr4Ey">附录 B　原理速查与自检清单</h1>
+<div class="tocbox" data-page-node-id="0DqTTI4azNm23ezBx78S1B"><b data-page-node-id="7qts6XXPeghbLO1dYAF5W5">本章小节</b>
+<ul data-page-node-id="bNXiMXfXiicBCGlCFu7rGb">
+<li data-page-node-id="jBOngHJdAqeA1Es8RMADr3"><a href="#_1" data-page-node-id="6RcLoZ8A6TZgycK8jACJkQ">一、各章核心结论速查</a></li>
+<li data-page-node-id="BYQU1RmSW2jdxMvmzNv9HA"><a href="#_2" data-page-node-id="KlXh3efj7VveXCugEgVoVI">二、架构自检清单</a><ul data-page-node-id="8OXdTPvLO6cMEo6QbmLYJI">
+<li data-page-node-id="dlhzbpEYUHvLDs70CUOPeu"><a href="#4" data-page-node-id="Yu4PUrzXaVk1eFOXMHaICV">状态（4 条）</a></li>
+<li data-page-node-id="ihE96eVp7AkfV62biyLeys"><a href="#5" data-page-node-id="M4QbOANuJ2DifyaUV9jgC0">控制流（5 条）</a></li>
+<li data-page-node-id="okcYEmAkYO6TIfGA8bXRW3"><a href="#4_1" data-page-node-id="UinsLU2s3zQF7sYPuGsVz4">契约（4 条）</a></li>
+<li data-page-node-id="jrF00ijlyCv4FF67LQozRI"><a href="#4_2" data-page-node-id="GAvjrIoQ3Z1aQazmCBJfjZ">工具与协议（4 条）</a></li>
+<li data-page-node-id="uEnrcNaJDTxgX12gtYOh3o"><a href="#5_1" data-page-node-id="ER3nxvNCDqjiGbsDR3WFbo">持久化与副作用（5 条）</a></li>
+<li data-page-node-id="vBJmBWe9qA4oGYQmymauiU"><a href="#4_3" data-page-node-id="RIk0EHPqmPXe83Qsi0m4IT">中断与人在回路（4 条）</a></li>
+<li data-page-node-id="Oud8zLBgA4J5CAJMuHBEnI"><a href="#4_4" data-page-node-id="jqeGL77xhdLwnXwVFK4uiX">观测与评估（4 条）</a></li>
+</ul>
+</li>
+<li data-page-node-id="OMvkCoiNjlBDvHxW27VKQk"><a href="#_3" data-page-node-id="ndrknnd9A7ExPKUxGsmsba">三、常见故障 → 根因 → 排查路径</a><ul data-page-node-id="Y1pbvy4RDidWwu8cvHP7Cj">
+<li data-page-node-id="DqhcTmGmLaFmcmDGcPEzDS"><a href="#_4" data-page-node-id="btVIQC29SAKRifSpMQ9iNN">输出质量类</a></li>
+<li data-page-node-id="D1NPlCoCPrVP7z7qcxNueB"><a href="#_5" data-page-node-id="QBsl5Hz7QPc8U5Cp2B99BJ">执行与控制类</a></li>
+<li data-page-node-id="7xFiIlV9wI50J7Kijq648Y"><a href="#_6" data-page-node-id="g5TDrYpDb52WwHXR8cNqZh">数据一致性类</a></li>
+<li data-page-node-id="2ZN92xybGmGFk3eEaXe5Au"><a href="#_7" data-page-node-id="F0beTozyzmATckssfZPEFS">中断与运维类</a></li>
+<li data-page-node-id="4KX1bv6GbrVdjNijrlBEe5"><a href="#_8" data-page-node-id="RFkoM8VLZphxAfW9n6Pmag">观测类</a></li>
+</ul>
+</li>
+<li data-page-node-id="8ki2eDRVwURqZkt5w8ZpPD"><a href="#_9" data-page-node-id="7716pMfY5cNyvDUGwRq28A">四、评审会提问清单</a></li>
+<li data-page-node-id="WgZH9xMAYRCRgmfFWTE78F"><a href="#_10" data-page-node-id="FymZn5WMIMYbV62O5FVjEh">结语</a></li>
+</ul>
+</div>
+
+
+<blockquote data-page-node-id="ZryrFhVbzObsPndMiF32ba">
+<p data-page-node-id="m9htBF8LL0soN3AbGeRyhu">三个工具：一句话版的全书结论、可拿去评审的架构自检清单、以及故障到根因的排查路径表。用法见文末。</p>
+</blockquote>
+<h2 id="_1" data-page-node-id="7gqHZce6pfCAPDJHuE3MKW">一、各章核心结论速查</h2>
+<p data-page-node-id="fH0rFoHcQg3LAUGoRFpU60">每章压成一句话。遇到困惑时先在这里对一下，多数问题能直接定位到章节。</p>
+<table data-page-node-id="YEvdYKAEsmqeG25zLuqWaU">
+<thead data-page-node-id="aWaKXeuGsZglb0kFY7zvfX">
+<tr data-page-node-id="4X8T08880tPX1EK2toAOWY">
+<th data-page-node-id="2uFmcO9p0bCabxNgoRyogJ">章</th>
+<th data-page-node-id="a5yKD4FYL1WYwCpp5xrS9N">一句话结论</th>
+</tr>
+</thead>
+<tbody data-page-node-id="DQPoG2W2UYMxt2bZP3MRVt">
+<tr data-page-node-id="CZupoCGwGXeLny0Fmo9Ir8">
+<td data-page-node-id="IA3gNEszmdY3l0T4SXYCfC">1</td>
+<td data-page-node-id="CoCzExPXYXumylcmgZwXMk">框架是被问题逼出来的：编排成本、循环控制、状态持久化、执行可观测依次逼出四层抽象</td>
+</tr>
+<tr data-page-node-id="jZlFWNGqi6flFeGjdhjFrU">
+<td data-page-node-id="sB1Q9y7lrggG8LYaE6AO11">2</td>
+<td data-page-node-id="vxQdZIWQZb8NkF9OrOaL1w">四个约束（窗口有限、无状态、概率性、副作用不可逆）推导出四件必需品：上下文装配器、外部状态存储、校验层、中断与预算</td>
+</tr>
+<tr data-page-node-id="iVr772O2McHRbZzM1ifK63">
+<td data-page-node-id="xdeXrLpZlYz1vbj89HPvHA">3</td>
+<td data-page-node-id="7hjblYgNfJjgcqVimZEXaL">抽象只封装"变化"，不封装"选择"；判据是可组合、可替换、可观测</td>
+</tr>
+<tr data-page-node-id="FaiQ7S9qRoWmjZIE8buZuo">
+<td data-page-node-id="PnaJAO4VRDdAFiyTMvRGB1">4</td>
+<td data-page-node-id="fLcgwpbmSO0Fp80EvLzZeI">生态每一层都能追溯到一个具体失败；核心能力从组件层迁到运行时层的根因是职责错配</td>
+</tr>
+<tr data-page-node-id="pSLuKGXIGck0RoaZNOHwRz">
+<td data-page-node-id="HpW93zWchgbUck7PexYF9m">5</td>
+<td data-page-node-id="m8VF6vhCaAmH4oHGxShC8d">统一协议的要素缺一不可；横切关注点必须提升到协议层</td>
+</tr>
+<tr data-page-node-id="jlwVNcyjjmqvEr8ZqzS3bo">
+<td data-page-node-id="E3RKG72Cl5wJhuFCvSHyYj">6</td>
+<td data-page-node-id="DP7crPbAuhczHh1z9I0TC5">声明式的价值是结构被保留；链路能否流式取决于有没有"必须等完整输入"的组件</td>
+</tr>
+<tr data-page-node-id="Bmt1FdZDOW4cBt1RshdIHj">
+<td data-page-node-id="fj3La6z3gVwVzSlsiKBtoe">7</td>
+<td data-page-node-id="QyIpjkPjK1Dhhz2t6BrDCx">适配层要抹平的是能力差异；工具调用协议的核心价值是意图与执行分离</td>
+</tr>
+<tr data-page-node-id="BQcb0rawuvj6GXHY5JYmrB">
+<td data-page-node-id="dxHCdZAJ2YzXAxzdLvgJpx">8</td>
+<td data-page-node-id="Xa4fSQpmofLZlnhEX9EJPc">提示模板是纯函数，解析器是三层防线：宽松抽取、严格校验、修复与升级</td>
+</tr>
+<tr data-page-node-id="jH5rVHyIOIhxxlSWUaq3CH">
+<td data-page-node-id="k6sE1zdMY3aheR4WckHVtp">9</td>
+<td data-page-node-id="hwCsxYxKc7OCWJ9SmB1v59">RAG 的失效点几乎全在检索；检索层与生成层必须分开评估</td>
+</tr>
+<tr data-page-node-id="ga3z8yz0ZsPx7S9h14reDv">
+<td data-page-node-id="dDD38F50EdQg0iKXdnnRxV">10</td>
+<td data-page-node-id="fKVO9V95YJAEbOHdJyOueq">循环 + 状态 + 终止条件 = 智能体；一旦允许环，终止性必须由显式控制承担</td>
+</tr>
+<tr data-page-node-id="jpsovGrdo07NRiwax28Sfi">
+<td data-page-node-id="GCtW9CktMdCzn6Lr7LCHOQ">11</td>
+<td data-page-node-id="mniejcV0gEfyzaTFfOGqem">读全量、写增量；归约器决定并发安全，用错归约器的三种症状是数据变少、无限增长、数值偏高</td>
+</tr>
+<tr data-page-node-id="4Lb8FZ0E7EXuv6q6LDqzyA">
+<td data-page-node-id="gtfd9jEnXV3DBpCycFsziH">12</td>
+<td data-page-node-id="yIy8JfslsoceY42ArLJZqd">同步边界是确定性的来源；复现要靠回放不能靠重跑</td>
+</tr>
+<tr data-page-node-id="kZ2LSgvpqPCF7pjkJ4rK1a">
+<td data-page-node-id="ys26ANevfUMHBSDqqZnrfw">13</td>
+<td data-page-node-id="GBlFnERe92EWwwbvnvABa8">节点级原子性不存在；幂等键必须由产生副作用的一侧去重</td>
+</tr>
+<tr data-page-node-id="QfFQsARZhGDmoULs4VhM8V">
+<td data-page-node-id="1vjSq3CRFEyQsrTbOPCKIH">14</td>
+<td data-page-node-id="GHYkPVI9ZzY7yAbUAIXS4B">中断是跨进程跨时间的退出与重入；恢复请求是一个高风险的写操作</td>
+</tr>
+<tr data-page-node-id="oheir1Zk3g42IthmX2WDmC">
+<td data-page-node-id="kRvdsVN2LAJ1IQjHLNtxrx">15</td>
+<td data-page-node-id="Z9L1oWQGFQo1jEwdKuEDIi">多智能体是组织设计问题；只有"上下文隔离"与"工具集隔离"能带来收益时才拆</td>
+</tr>
+<tr data-page-node-id="YnzXZMMrWgel2E3FdF7fFf">
+<td data-page-node-id="LxBar7fKxeuEiBb2nu3UGY">16</td>
+<td data-page-node-id="em0SgvSgh8g7cKPDeNxA5p">Schema 的价值在"拒绝"；校验必须集中在三个系统边界上</td>
+</tr>
+<tr data-page-node-id="leyVdKCB1dXGdstbxnClRB">
+<td data-page-node-id="MYvKqTHAG4XrpPZwsj7DPA">17</td>
+<td data-page-node-id="BlotafDWkuDDT7YPn6Y5pZ">协议化把 M×N 变成 M+N；工具失败是数据不是控制流；外部内容是指令的危险源</td>
+</tr>
+<tr data-page-node-id="gpGadPpu7NG6LFJgpKfFoC">
+<td data-page-node-id="wfzQw1EypXnTmLcvUXGUmE">18</td>
+<td data-page-node-id="ZcnOvbGzd4tv4ATZIutShp">观测是发现问题的唯一途径；未校准的自动评分比没有评分更危险</td>
+</tr>
+<tr data-page-node-id="cmUJk3mtlVMuCggAFo81b1">
+<td data-page-node-id="lz2uDB7IHNkC50GD0rCGxB">19</td>
+<td data-page-node-id="36u1TO8SlqbZBUxwQrGMLY">负载的四个特征推导出四项架构要求；行为定义需要比代码更谨慎的发布流程</td>
+</tr>
+<tr data-page-node-id="n6OExzFNz09dAPIsfbcgIP">
+<td data-page-node-id="FDv3g8ny71Vx305sOEsRSs">20</td>
+<td data-page-node-id="vYfk1AcSFhUM2tWb7ZHkqT">四种循环模式是基础结构；循环质量取决于失败能否被快速识别并终止</td>
+</tr>
+<tr data-page-node-id="yhBBzWVUu7MiIzkEP2sFxg">
+<td data-page-node-id="7OODrAO2kQzqHPzV3tMa9H">21</td>
+<td data-page-node-id="opDE97sw8OHT1JY8G0pKtW">上下文工程的核心是判断"这条信息该放哪一层"，而不是"怎么塞得更多"</td>
+</tr>
+<tr data-page-node-id="hYPxF28nfRsCQC8zra6GcG">
+<td data-page-node-id="sq5sSIb2Qj0M5FuU0COAPA">22</td>
+<td data-page-node-id="QzD50bqtgAapAi3JR2Wsqn">五个必答设计题含糊即返工；三个陷阱：运行时当组件、观测留最后、假设模型会听话</td>
+</tr>
+<tr data-page-node-id="URbmwiorUpKpMx78vuHPgz">
+<td data-page-node-id="E5ZYDtu14HBC26Z2RD1Wn9">23</td>
+<td data-page-node-id="xZRehS8CeTk8Hvslyfju8b">主要工作不是让模型做对，而是让错误无法静默地传播</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2" data-page-node-id="Kg2xOm2L1HiFZ19zcqm7sH">二、架构自检清单</h2>
+<p data-page-node-id="ZRJ3PLVhA3MsswbgrllGJU">三十条，按模块分组。每条都以问句形式给出，<strong data-page-node-id="NYL5FNBAlAY6QL2SEDyXiQ">答不上来或答得含糊的项，就是风险项</strong>。</p>
+<h3 id="4" data-page-node-id="pnE1cATzWn64ToTUdkgfeg">状态（4 条）</h3>
+<ol data-page-node-id="wjqthwP6BNaqJbNkOgkvjc">
+<li data-page-node-id="0UjhOCuFuQ7f8KIOysAFBk">状态里每个字段的<strong data-page-node-id="Clyg4HoFZAugwtw1DMVvjn">归约语义</strong>是否明确？是否存在多个节点在同一个超步里写同一字段的情况？</li>
+<li data-page-node-id="meYpkDTOY0ZiJ4L3mNtbcb">状态里是否含有不可序列化的对象（连接、句柄、客户端、闭包）？</li>
+<li data-page-node-id="rCASirYzQKIc8I7XUyIaow">只看状态的内容，一个不了解系统的人能否说出"任务做到哪了、接下来要做什么"？</li>
+<li data-page-node-id="2CcQUDM3LkMZiUAJZHRA0w">累积型字段（列表、计数器）是否设了<strong data-page-node-id="X1sCUTkEDZG5c6pTWUj5pE">上限与淘汰规则</strong>？</li>
+</ol>
+<h3 id="5" data-page-node-id="R5Fvw6b9z2Ha8BV5NFje8r">控制流（5 条）</h3>
+<ol start="5" data-page-node-id="H84wGnRDmVNgiuZ0tyo8LE">
+<li data-page-node-id="wvGGQyE5p1fQrjcS7CZwkh">是否显式定义了"目标达成"的终止判据，并且不单纯依赖模型的判断？</li>
+<li data-page-node-id="fCBSvikVHjdwvU9zFJaag3">是否存在"无法完成"这个<strong data-page-node-id="eyGmns4B0Clhu1THBudwy4">合法出口</strong>？（缺它会让无解任务一直消耗预算）</li>
+<li data-page-node-id="ex4SPHR87G5pAIdyz8FMe6">四类预算（步数、工具调用数、token、时长）是否都在线生效并能中止执行？</li>
+<li data-page-node-id="sF0SOh6rUyJXQqix8JE3Tn">是否有进展检测？能否识别"连续两轮没有新信息"这种情况？</li>
+<li data-page-node-id="sRnf4tuY60PDs3L81GCuiR">每个条件分支是否都有兜底路径？（缺它会造成静默挂起）</li>
+</ol>
+<h3 id="4_1" data-page-node-id="FIYpunrq4rRexJYEVnPPxZ">契约（4 条）</h3>
+<ol start="10" data-page-node-id="FK60wv2c7IZlFMUVmOwFwR">
+<li data-page-node-id="KnZWcNECUaJBnA02DoECGN">模型输出、工具参数、流程状态三处 Schema 是否使用统一类型系统、是否都在系统边界处强制校验？</li>
+<li data-page-node-id="MEgAEn1xTlicA6l18qCdqb">所有涉及单位的字段，描述里是否写明了单位与格式？</li>
+<li data-page-node-id="VTJaqTz46Btf71XiyTzNkl">校验失败后是否存在真实的"上报"分支？还是会被默认值静默吸收？</li>
+<li data-page-node-id="vqtH7TBR7C25S92D4RvyPX">重试是否限定了次数，并在重试时传递了<strong data-page-node-id="qiKNvbxvuFCDDL6BaD3qIc">精确的失败原因</strong>？</li>
+</ol>
+<h3 id="4_2" data-page-node-id="ZlkuJgO3CUAju1EMQRAOJs">工具与协议（4 条）</h3>
+<ol start="14" data-page-node-id="GQHxi3NP42LgsPsXn2Pobx">
+<li data-page-node-id="DX6B3RXAlw1bbRo19eJX6S">工具失败是否以<strong data-page-node-id="uHWpivtbqyrLJh0JvkWpJv">结构化返回值</strong>表达，而不是抛异常？</li>
+<li data-page-node-id="TB9FShHlkwpluZCPdYw9b2">工具集的大小与可区分度是否被审查过？（功能重叠的工具会推高误选率）</li>
+<li data-page-node-id="TY8Q0IwFCv1Y20k4RsZl5N">工具返回的内容是否做了裁剪或结构化提取？是否可能单次调用吃光预算？</li>
+<li data-page-node-id="ULTX5CURqFk7eeryt7VzFU">工具返回的内容在装配进提示时，是否有明确的"这是外部内容"边界标记？</li>
+</ol>
+<h3 id="5_1" data-page-node-id="ZPaQgvLxYGIBMgxOTSAqyq">持久化与副作用（5 条）</h3>
+<ol start="18" data-page-node-id="wAqohqF28cDTQWui4xGSAA">
+<li data-page-node-id="3DifJJfOvJCQI8iAJmEPw8">检查点保存的是否包含<strong data-page-node-id="AGHbdmJgRFOBTLq4nWtbY9">外部交互记录</strong>（模型调用与工具调用的输入输出）？只有状态是不够的。</li>
+<li data-page-node-id="ENFLxmZztaBB63cYuhPx7I">会话标识的粒度是否与业务上"一次连续交互"的定义一致？</li>
+<li data-page-node-id="eU1E99kCxNDCJbeoQ5mJDM">所有有副作用的调用是否都携带<strong data-page-node-id="RqC9KcRqvKy1ptCH9iqMGe">幂等键</strong>，且由产生副作用的一侧负责去重？</li>
+<li data-page-node-id="aPhui7xolfUWAmheRJAdvG">流程结构变更时，在途任务的处理策略是否明确？（排空 / 双版本 / 迁移 / 作废）</li>
+<li data-page-node-id="lypOlF2JNbMJJQ3SynLjvj">副作用调用是否收口在少数几个位置？（散落各处时，幂等正确性无法审查）</li>
+</ol>
+<h3 id="4_3" data-page-node-id="6mPAp530b2KZGhM30kub9K">中断与人在回路（4 条）</h3>
+<ol start="23" data-page-node-id="1bDH2DJzLQSbvcBCjFUqT0">
+<li data-page-node-id="5eVeHDRI7OnFc2L4JisAK4">中断信息是否包含<strong data-page-node-id="XpMDpyb4LplIazDhzHwKFM">待决问题的精确描述</strong>，而不只是"停在这里"？</li>
+<li data-page-node-id="VDMvUpKHBCiaiQgfiXV0FG">恢复接口是否做了权限、时效、幂等、版本四项校验？</li>
+<li data-page-node-id="3JdgkkbnVS4kJhmYYKATRN">中断是否设了有效期与过期处理？（否则会积累僵尸任务）</li>
+<li data-page-node-id="JOPFhvjFK1FM2xeJDlBEal">是否存在"旧值还是新值"的明确策略来处理中断期间的外部数据变化？</li>
+</ol>
+<h3 id="4_4" data-page-node-id="Hrwh5FJVbsGCPzNcuY4dKz">观测与评估（4 条）</h3>
+<ol start="27" data-page-node-id="MkM7un1NUBg2HG42Qgujd0">
+<li data-page-node-id="VdflIyuqPd4IqOZ5DV01m8">六项关键埋点（模型调用输入输出、token 与耗时、工具调用、状态变化、控制流决策、会话与业务标识）缺了哪几项？</li>
+<li data-page-node-id="VoXJNQnmn7mqRlHkNsctK3">线上出问题时，能否<strong data-page-node-id="SGsJA2TdKtb5nGXibKgBLp">在不改代码的情况下</strong>拿到完整执行轨迹？</li>
+<li data-page-node-id="HrYMbOWQCnG9RzNDgd6ybd">是否支持<strong data-page-node-id="coHYyZ3sHmPbGOSCzzcDOq">回放</strong>（输入输出完整、顺序结构明确、执行可注入）？</li>
+<li data-page-node-id="DHiNRmnLXCOXFl3seKdzq3">是否有分层指标（单步 / 轨迹 / 端到端）与人工校准过的评分标准？</li>
+</ol>
+<div class="dg" data-page-node-id="tCEEcuvoHTGut0X1WYGeoF">
+  <div class="dg-stack" data-page-node-id="GmCKnDBxpENub6h9jkncGy">
+    <div class="dg-layer" data-page-node-id="XOChPtzEsDiP8Vfr3Lit6s"><span class="dg-tag" data-page-node-id="QSmBwQA8v70Eq1JN3e03IG">第 1 组</span>状态 1-4 · 控制流 5-9（最易返工，先答这九条）</div>
+    <div class="dg-layer" data-page-node-id="FeguELFOtoMAteeqoswzKc"><span class="dg-tag" data-page-node-id="XJM0MFiR24TWzvbM6hMhG9">第 2 组</span>契约 10-13 · 工具 14-17（决定输出质量与稳定性）</div>
+    <div class="dg-layer" data-page-node-id="DEZ3D6b392U9YpklexeQJu"><span class="dg-tag" data-page-node-id="16NCxOCxtxQnXZLbPP9jCg">第 3 组</span>持久化 18-22 · 中断 23-26（决定能否上生产）</div>
+    <div class="dg-layer" data-page-node-id="BYlkaFq3UBODg8YR8F2BLA"><span class="dg-tag" data-page-node-id="ZLEDvcYWHFp31EyWhWmScG">第 4 组</span>观测与评估 27-30（决定能否长期维护）</div>
+  </div>
+</div>
+
+<p data-page-node-id="ZWJMijDxOq0PUxsQuH6X5s"><strong data-page-node-id="Dtb4xP36iFtan6zvvrnLhL">使用建议：</strong> 如果时间有限，按组顺序答——第 1 组的问题返工成本最高（数据模型与控制结构是最难改的底层决定），第 4 组最容易被推迟但代价最隐蔽（观测缺失会让所有其他问题都变成黑箱）。</p>
+<h2 id="_3" data-page-node-id="OuAkpxaSCF5cNlrcjTHYUz">三、常见故障 → 根因 → 排查路径</h2>
+<h3 id="_4" data-page-node-id="U8CvGEtXVugL2vqZBnvQ8y">输出质量类</h3>
+<table data-page-node-id="XDEFBTXyZ9BNlt49lJE2Bu">
+<thead data-page-node-id="SVJRmaXXSotD3TJ24C75Em">
+<tr data-page-node-id="eREiuAs4bLSj0RvurOA42G">
+<th data-page-node-id="qK2YTAiQZETGpQ1GESRnSh">故障现象</th>
+<th data-page-node-id="HNDsjY4ZQUkfX4z8Ev5G9Y">可能根因</th>
+<th data-page-node-id="62CdsGUsBVPqenHGh5cfUj">排查路径</th>
+</tr>
+</thead>
+<tbody data-page-node-id="VsARvrFLwDCfBAUqkxHMEv">
+<tr data-page-node-id="2gpT9xYNJWVO6xGnlfwB9i">
+<td data-page-node-id="QgvenWderGktWtsvJ7n7HJ">回答流畅但内容错误</td>
+<td data-page-node-id="QnCEquvgbdKaCAoSoUQky3">检索命中了"相似但不相关"的内容 / 无依据时未设计兜底行为</td>
+<td data-page-node-id="WAtfOvXukgdHlAr9lEhjpv">看轨迹里的检索结果与提示装配；检查是否要求引用依据</td>
+</tr>
+<tr data-page-node-id="0fkaGvGstLWgd8Z3p9mJec">
+<td data-page-node-id="J4EDtPYq8Bws8rfwHvF9QA">引用了不存在的依据</td>
+<td data-page-node-id="VrwEZOKA2uK2dQCZ5T4Ct2">未要求标注引用 / 检索内容未带来源标识</td>
+<td data-page-node-id="eg8h1M8l6Rik4zzPnY2OpS">检查提示是否要求引用，检查装配时是否带了来源</td>
+</tr>
+<tr data-page-node-id="QSO93SfrRwL1JmHCsBe6YP">
+<td data-page-node-id="tqJYPKIK4bMEUSaCY4HLnt">增加上下文后质量下降</td>
+<td data-page-node-id="AuiUbI4zZmUu8YbL3hP57A">注意力稀释超过信息效应</td>
+<td data-page-node-id="T5HiUhRZVwzEkQ9KOBQDmD">分类设上限；先做减法，看减少后是否变好</td>
+</tr>
+<tr data-page-node-id="PjRTWJAwPOCbl9cmb7Rv2K">
+<td data-page-node-id="pg5GnZXk74ICxi1aqg7SJv">模型忽略明确给出的信息</td>
+<td data-page-node-id="ASt5JRQS23zWG9OBLpdJck">该信息位于上下文中段 / 被其他内容淹没</td>
+<td data-page-node-id="BDvfoXN9FnQdzDpSIuzGwS">检查该信息在提示中的位置；考虑移到首尾</td>
+</tr>
+<tr data-page-node-id="RT4lF306Y9B4doEEf8yukw">
+<td data-page-node-id="SPkLD489yjflzNdfyQymKo">换模型后行为整体偏移</td>
+<td data-page-node-id="Xjn8OXTffznZSpt0wFSmgm">采样参数与停止条件的语义差异（不可抹平的适配项）</td>
+<td data-page-node-id="Ne0zHCiA3q1iIQPEe3nqEF">逐项对比两家供应商的参数含义；检查停止条件</td>
+</tr>
+<tr data-page-node-id="DCYr5bupBPMiygkbKJJzRJ">
+<td data-page-node-id="18WzAm2TaM4DupQ6gNH1W5">回答中使用了自己的旧知识</td>
+<td data-page-node-id="ca54BP8cEOWGkrswFKahbF">未明确指示"仅依据给定资料" / 未定义无依据时的行为</td>
+<td data-page-node-id="VFMfuqCvvTIelky5tF1EMk">检查系统指令是否包含这条约束</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_5" data-page-node-id="QKDkJcQUM0heOrJKWS2T8w">执行与控制类</h3>
+<table data-page-node-id="zMOlJ8FkiPoWinDHwP5HO4">
+<thead data-page-node-id="2YuJChCERCTjk2cSQFSlUx">
+<tr data-page-node-id="V5aqv8VgBVeCA8Q9hZkEkC">
+<th data-page-node-id="cafq8zsxLCXc9eDdH7Q73s">故障现象</th>
+<th data-page-node-id="mG6ow4JQLWxjuaHOH2Z5Fj">可能根因</th>
+<th data-page-node-id="3iALQ7Hd7pky8dfN5Se9C3">排查路径</th>
+</tr>
+</thead>
+<tbody data-page-node-id="7R6yV43OBCTcvtLgAEHNJC">
+<tr data-page-node-id="CyVZZr1e2ojJVf1ZhbLdBH">
+<td data-page-node-id="eGdw2jwYAKSMgGgoDXKaO0">任务长时间不结束</td>
+<td data-page-node-id="Z7H2PvFAmz7ygC2s3yx5RV">缺少进展检测 / 终止判据不完整</td>
+<td data-page-node-id="Bw9oOg6fgUt42ypiXh24dB">看轨迹的轮间差异；检查是否有"连续两轮无新信息"的检测</td>
+</tr>
+<tr data-page-node-id="5b2kYkMbHJdFFFyzn5s3cT">
+<td data-page-node-id="oyWeT94FYYmSqcpsCzHBzG">任务卡住但无报错</td>
+<td data-page-node-id="3HSsdzARQ4iBzx8hENrFPv">静默挂起：激活集非空但无可达出口</td>
+<td data-page-node-id="omBGfiC0JR71Zp3bupjA7f">检查条件分支是否覆盖所有情况；看检查点里下一轮激活集</td>
+</tr>
+<tr data-page-node-id="cwDc3eYUQjoHCyTPTnb3xk">
+<td data-page-node-id="9XPnWQBmgsFSDD3WUQFzQq">过早收敛、任务未完成就结束</td>
+<td data-page-node-id="ovaQIco3uilXtrCft5Une3">终止判据过于宽松 / 模型被允许自行宣告完成</td>
+<td data-page-node-id="dfgGD3vSjAEAg7o9Osjjhk">检查终止条件；增加对"完成"的外部校验</td>
+</tr>
+<tr data-page-node-id="CMKgVri3RqiUK2Iyq3xAqa">
+<td data-page-node-id="VL2A0a3t1rUao2Z55XDQA4">同一工具被反复调用</td>
+<td data-page-node-id="tqtnVJ8NdKDhCZ4Vgw1XFY">工具可区分度低 / 失败信息不够具体</td>
+<td data-page-node-id="yAF9bnNd0HbgLOx3Z6o7bI">审查工具描述；检查失败返回是否包含修正建议</td>
+</tr>
+<tr data-page-node-id="JoJ6HwOoZmFOQO7T1k0k9l">
+<td data-page-node-id="M0A9K4V5YVD90OmwAwe3YS">重试后成本上升但质量不变</td>
+<td data-page-node-id="KC4kgamfUnuymjWHNzYpCj">重试的是结构性问题 / 未检测轮间是否改善</td>
+<td data-page-node-id="g5dDCbWK4JfVULYkMccLq4">检查失败原因是否是系统性的；加"轮间提升"检查</td>
+</tr>
+<tr data-page-node-id="3dN2kIZs3NiqrywCDHCgNu">
+<td data-page-node-id="XOF6vQJwtBdvuNVzXrkTLX">触发限流后整批失败</td>
+<td data-page-node-id="8PPd4WBeTYx06MsNLD3ICl">并行度超出外部速率限制（第 12 章约束一）</td>
+<td data-page-node-id="PlhzAFvN8YCvkenOobnuoB">检查并发上限配置；改为队列或分级退避</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_6" data-page-node-id="obSNWtL6dBkCaqrpQKoItn">数据一致性类</h3>
+<table data-page-node-id="siScLYxzHAj3Is1c27L9LF">
+<thead data-page-node-id="YlBYvV6EeixQf7Szc6mhZ6">
+<tr data-page-node-id="sqA655Kiad3FeTDZIwug9d">
+<th data-page-node-id="0KHmmBcVPpC7DkPyKpNJnD">故障现象</th>
+<th data-page-node-id="45gRSFa6H7ujLGmXGP11HY">可能根因</th>
+<th data-page-node-id="0BQPt5rYwTGshJvF0LQ4cI">排查路径</th>
+</tr>
+</thead>
+<tbody data-page-node-id="oK80OfRlxL0FYYLbFcSh8X">
+<tr data-page-node-id="fQq6h4O5aI5sXdVxOe0jHn">
+<td data-page-node-id="cRZE6STGPvGgmxD6TXDBTE">并发执行后数据变少</td>
+<td data-page-node-id="itZK7KUEqBveYAzj2ky0xx">归约器用了"覆盖"而实际需要"追加"</td>
+<td data-page-node-id="XIv1BTTUm5UmwzHzdxvE7U">逐字段检查归约语义与写入模式是否匹配</td>
+</tr>
+<tr data-page-node-id="Am2UDviPhhhjPlSzUVxHgC">
+<td data-page-node-id="P2XHUC78OofGWoNpdfXbJo">状态随轮数无限增长</td>
+<td data-page-node-id="qfnbZcP4PxPkDWOyXugsIq">累积字段缺去重或上限</td>
+<td data-page-node-id="mWBFJaKh8TdkZAZ7z6p8B5">检查列表型字段的追加规则</td>
+</tr>
+<tr data-page-node-id="5GkLcEm7oLb6vywINny82m">
+<td data-page-node-id="Ug85qpy3F337KGE9U1YdrV">数值统计偏高</td>
+<td data-page-node-id="sKhVkFwnz0x5PkCmlw3ocD">"求和"用在了增量含全量的场景</td>
+<td data-page-node-id="mXcjXfBsBQd2OTm9AQ02Vo">检查计数类字段的语义是增量还是全量</td>
+</tr>
+<tr data-page-node-id="S8p4FGbViyUv9mwz9WxwhT">
+<td data-page-node-id="83HGmUqJkCSFVG1fBzNqaE">恢复后出现重复下单/重复通知</td>
+<td data-page-node-id="WpnzQPvVkAMFUT7HXscAeh">副作用未做幂等，或节点内动作不具备原子性</td>
+<td data-page-node-id="HqtcM5NWQT44aZtXkLRVu0">检查副作用调用是否带幂等键；检查是否收口</td>
+</tr>
+<tr data-page-node-id="TqRHHwlZycgPSPqtBQaEuz">
+<td data-page-node-id="jfKCHbzxFCVEj7C1FZq3QH">启用持久化后报错</td>
+<td data-page-node-id="o8VRYe9nk0FkIsZuZje7Hx">状态里含有不可序列化对象</td>
+<td data-page-node-id="IenLi56CX30udcVvjidvo4">检查状态字段类型；把资源移出状态</td>
+</tr>
+<tr data-page-node-id="sSdHwWzjERFMLlL1vTgKxz">
+<td data-page-node-id="qxHSzpdKzUyIl11gVENxxj">恢复后结果与崩溃前不一致</td>
+<td data-page-node-id="jrpHYHlnAH5VGcxQsE3usa">缺少外部交互记录，导致重放变成重算</td>
+<td data-page-node-id="oKT34LCcaGAem58poxpvaA">检查检查点是否保存了模型与工具调用的输入输出</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_7" data-page-node-id="EvGsVdHHb2QKsDXON3w1br">中断与运维类</h3>
+<table data-page-node-id="EALFbGnJJlfQJBQmOxlS8T">
+<thead data-page-node-id="KAYjORCHnJguXLBz6AiuVz">
+<tr data-page-node-id="DyFIU7rQxPVfd3sFir1tbc">
+<th data-page-node-id="5SJUpEJIQjLEqRw8pewkUe">故障现象</th>
+<th data-page-node-id="bfKVOY7AdWVyF3WhFqL2iO">可能根因</th>
+<th data-page-node-id="X73RFV3psUiW5mX6bdx7dV">排查路径</th>
+</tr>
+</thead>
+<tbody data-page-node-id="qPs7SYfszo1cZatsETzEGB">
+<tr data-page-node-id="4z7rJ2Ei65MTZ3GbCnnXKK">
+<td data-page-node-id="SdNcgCl7mFwy2PbC2VZ7xR">恢复后使用了过期数据</td>
+<td data-page-node-id="Q1iRFSEkeHOlByhSk5UhtU">缺少"旧值还是新值"的显式策略</td>
+<td data-page-node-id="dwIo045FEMEsMPE6khV6rV">检查中断信息与恢复逻辑的价值取向</td>
+</tr>
+<tr data-page-node-id="iPYVSUdeSoDt1fGs6DDJxn">
+<td data-page-node-id="F1VBdcg4SPTIEP5MlV9i8W">恢复方不知道该传什么参数</td>
+<td data-page-node-id="sUp2cdP3cAIo8bI0yRfTIr">中断信息缺少待决问题的精确描述</td>
+<td data-page-node-id="d2K1iSZdmGzZbdAQ2juEWt">检查中断构造的内容</td>
+</tr>
+<tr data-page-node-id="3oF4r6cgZ7EyCNdOZEQRvY">
+<td data-page-node-id="cVTAfjMzIwRnX3eW5nF7Mn">同一中断被处理两次</td>
+<td data-page-node-id="4YyPxDgJ14N7JV8IL5Ujv3">恢复接口缺少幂等校验</td>
+<td data-page-node-id="HJGM1C4KlSX2z8svpzKJDc">检查恢复是否标记了"已解决"</td>
+</tr>
+<tr data-page-node-id="GaJCbaItLhFAxEbzyCHCaT">
+<td data-page-node-id="W3j5LCgrbh5S66PG9v3GaU">大量待办堆积无人处理</td>
+<td data-page-node-id="bamJznYJJDqbdZJivtW90P">缺少通知补偿与升级路径 / 无有效期</td>
+<td data-page-node-id="ULn1BQ891bIKsLX6VvvJJu">检查通知机制与超时处理</td>
+</tr>
+<tr data-page-node-id="uVXTENJwHnJHhreIFmEKog">
+<td data-page-node-id="1FpB8ewOdn4fAMCVnPr8zB">发布后所有在途任务失败</td>
+<td data-page-node-id="qsOzYl5f2v2lSYiPa5M20Q">未定义在途任务策略</td>
+<td data-page-node-id="iPDuBkKrcmCXG3ge99477e">检查发布流程是否包含排空或双版本方案</td>
+</tr>
+<tr data-page-node-id="lm59Cvn8MZYtCirDaXeM7M">
+<td data-page-node-id="CYS1LCm9MIt0rPk3rz5Aq6">灰度后用户体验割裂</td>
+<td data-page-node-id="a25gpLRkpxPT59inI8CDB4">分流按请求而非按会话粘性</td>
+<td data-page-node-id="raU67oappzErTwOBjn2vjh">检查分流粒度</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_8" data-page-node-id="ezAgx1lQcQJ1Hd68jpYJGW">观测类</h3>
+<table data-page-node-id="czCS9qnPC5iSVg6lyE0qxS">
+<thead data-page-node-id="UaFb1IozX3LevUcGijv1v3">
+<tr data-page-node-id="94nFP0emNjEnwg0nlOEg2E">
+<th data-page-node-id="Qc8FKAWUght8sRg9aERfPh">故障现象</th>
+<th data-page-node-id="72ChytryMuKBVsiC8PCCEn">可能根因</th>
+<th data-page-node-id="gZ8EwlKHrAmsznS0Nv41e1">排查路径</th>
+</tr>
+</thead>
+<tbody data-page-node-id="AyGAzpzOa4zysGWd3u4IRy">
+<tr data-page-node-id="pZwhuIfqjvfqHrLLJvTdrN">
+<td data-page-node-id="6Wm7sLhIe9ci3dCkaStjwt">线上问题无法复现也无法定位</td>
+<td data-page-node-id="zXDNs1KqQ7ngoreBw352Zj">观测数据不足（缺少完整输入输出）</td>
+<td data-page-node-id="CZhC51clEjbbiVNy4jFWKn">检查六项埋点覆盖情况</td>
+</tr>
+<tr data-page-node-id="zeRDAYdW6ShyeCtVa4ZPhp">
+<td data-page-node-id="MM4XYeQoPJL2wtO4mT3MRB">指标下降但不知原因</td>
+<td data-page-node-id="yof8R9YRlJb9MzVQ9P2Ny0">只有端到端指标，缺少分层指标</td>
+<td data-page-node-id="fCyqLsOa0lj3nDLL2YRyuF">补齐单步与轨迹层指标</td>
+</tr>
+<tr data-page-node-id="y8f4SA2wOEOFWZEowoRw0h">
+<td data-page-node-id="JywcVAao34vbUMqZrQxM0C">指标在改善但业务体感没变</td>
+<td data-page-node-id="mkPC22I5QWGfIq8OH9XklI">自动评分未校准，偏离了要衡量的东西</td>
+<td data-page-node-id="fhHRcIXMTnJYeAgeB4iFyC">抽样人工核对，处理评委偏差</td>
+</tr>
+<tr data-page-node-id="hrubdxO50dLljcKkJ2DXZA">
+<td data-page-node-id="bV5eIDSdLBGEN5KG6e8UYj">改动效果无法判断</td>
+<td data-page-node-id="FybCZ01dLmFFgM9VhYuQ13">缺少固定的回归集</td>
+<td data-page-node-id="NaVNEed9WxTumy2CRDZV22">从线上失败案例建立用例集</td>
+</tr>
+<tr data-page-node-id="rxQPdGf2tHn77U1Jo0xpis">
+<td data-page-node-id="1iTzCp8lKh731HO7qmNzA4">观测成本成为显著开支</td>
+<td data-page-node-id="ZdnJFrea02bVbIvDGP1XUt">缺少分层保留与采样策略</td>
+<td data-page-node-id="oz5hxWkhQYsopa4Nid53bB">改为失败全留、成功采样</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_9" data-page-node-id="h2kyabvZnkg0FBR7rVisXD">四、评审会提问清单</h2>
+<p data-page-node-id="2U4G45cQdqnIM5C4bfuhbA">在评审他人（或自己的）设计方案时，按顺序问这八个问题。<strong data-page-node-id="EmoMX3xEWumoqm6ruHjUwS">它们覆盖了返工成本最高的区域，且每个问题都有明确的"含糊"信号。</strong></p>
+<ol data-page-node-id="QTMoWjzHcDGEgE8NzOAJ9x">
+<li data-page-node-id="5TlifXTceyptWnM96EsgFM"><strong data-page-node-id="S2w0jIQ9NPaW9ROJzlejMI">状态里有哪些字段？每个字段的合并语义是什么？</strong> — 含糊信号：答"就是一些上下文"。</li>
+<li data-page-node-id="WSkCQWsgIF89s1tKkWzhVk"><strong data-page-node-id="40GeJUG8dORjzU7DjMtVe5">流程在什么条件下会停止？如果任务根本做不成，会怎么结束？</strong> — 含糊信号：答"模型会知道什么时候结束"。</li>
+<li data-page-node-id="2Q7uhfKtGMUXvxNwYQIb6I"><strong data-page-node-id="iyMFreL9nm2p9WAGe2c5tO">如果进程在第三步崩溃，恢复后会发生什么？</strong> — 含糊信号：答"重新跑一遍"。</li>
+<li data-page-node-id="EGuXzj550qBKr5MyJibibQ"><strong data-page-node-id="95LkNIxn0T4Q91MGKpff8c">系统里有哪些不可逆操作？它们如何避免重复执行？</strong> — 含糊信号：答"不会被重复执行"。</li>
+<li data-page-node-id="H2ifK5NBwsUwcZo464hM9b"><strong data-page-node-id="w4aPXepy2BrtgeWpNTf0EE">线上出了这个问题，你需要多久能定位到原因？靠什么数据？</strong> — 含糊信号：答"加日志看看"。</li>
+<li data-page-node-id="V86NR8i9xx96xvNhB1RtOU"><strong data-page-node-id="vBIYjXKbZfTQt1KMdq4k7v">如果一个请求的成本是平均值的十倍，你会怎么发现并阻止它？</strong> — 含糊信号：答"月底看账单"。</li>
+<li data-page-node-id="7G1etClxkVVRQBZ5XkW08l"><strong data-page-node-id="iXKF39OkqB7lWgvZXJpfLO">这次改动如果效果变差，怎么判断？多快能回滚？</strong> — 含糊信号：答"看用户反馈"。</li>
+<li data-page-node-id="9z3JhrXCePWkGily2ezCQY"><strong data-page-node-id="UafAGxyiSNn2A9Wu0YUx8D">系统里有哪些"模型应该会……"的假设？它们被什么检查覆盖？</strong> — 含糊信号：列不出来，或答"其实挺可靠的"。</li>
+</ol>
+<p data-page-node-id="URndJ9ZBHrshWOnC3azXOX"><strong data-page-node-id="IQxNfSDzdAC72MsaYuelNI">这八个问题的共同特点是：它们问的都是"出错时怎么办"，而不是"正常时怎么做"。</strong> 因为正常路径几乎总能跑通，系统的可靠性由异常路径的处理质量决定。一个设计方案对异常路径的回答质量，基本就决定了它上线后的稳定程度。</p>
+<h2 id="_10" data-page-node-id="Sd6lMl5r51w7R38H7xbUV5">结语</h2>
+<p data-page-node-id="DH3ZAGaowbaphqkpRAp2Ac">这份附录里的三张表——速查表、自检清单、故障排查表——都是同一批原理的不同投影。速查表回答"这个道理是什么"，自检清单回答"我有没有做到"，排查表回答"出了事怎么找"。</p>
+<p data-page-node-id="h8gbDMwMO0UC6K0f3HG7ob">如果只带走一件东西，建议是<strong data-page-node-id="T5QYhIYum5vYU4Mt8cXgkO">第二节那三十条自检清单</strong>。它可以直接用在任何一个智能体系统的评审上，无论它用的是哪个框架、哪种语言。而且随着你经验增长，你会发现这三十条几乎不需要修改——需要改的只是你对每条的理解深度。</p>
+<p data-page-node-id="iFHs7KG00t22Kl9hhqUX1x"><strong data-page-node-id="g6vFb9OEGBEvOXyXeq0DUl">原理的价值不在于它告诉你答案，而在于它告诉你该问什么问题。</strong> 这一页上的问题，就是这本书想留下的东西。</p>
+<div class="pager" data-page-node-id="XO4c5FZZ4tP2S2lAGkIfD1"><a class="prev" href="apa-glossary.html" data-page-node-id="8YAo0xksAWhXwosMrJmCUp"><span data-page-node-id="oDmhJQSdKUG7g4zHUocnen">上一章</span><b data-page-node-id="7bZVtZ1VAWL8WDPnwViy7S">附录 A　术语表</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

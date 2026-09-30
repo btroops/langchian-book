@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 21 章　上下文工程</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="layout">
+  <aside class="side"><a class="side-brand" href="index.html"><b>智能体运行时原理</b><span>从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part">第一部分　问题空间<em>框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html"><i>01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html"><i>02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html"><i>03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html"><i>04</i>LangChain 家族的全景与演进脉络</a><div class="side-part">第二部分　LangChain 的抽象原理<em>组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html"><i>05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html"><i>06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html"><i>07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html"><i>08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html"><i>09</i>检索增强（RAG）的原理</a><div class="side-part">第三部分　LangGraph：从链到图<em>状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html"><i>10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html"><i>11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html"><i>12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html"><i>13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html"><i>14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html"><i>15</i>多智能体拓扑</a><div class="side-part">第四部分　依赖族与生态<em>契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html"><i>16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html"><i>17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html"><i>18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html"><i>19</i>部署与运行时形态</a><div class="side-part">第五部分　原理迁移<em>超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html"><i>20</i>Agent Loop 的通用模式</a><a class="item on" href="ch21-context-engineering.html"><i>21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html"><i>22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html"><i>23</i>结语：框架会变，原理不会</a><div class="side-part">附录<em>速查与自检</em></div><a class="item" href="apa-glossary.html"><i>A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html"><i>B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot">共 23 章 + 2 个附录 · 原理优先<br>零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main">
+<article>
+<h1>第 21 章　上下文工程</h1>
+<div class="tocbox"><b>本章小节</b>
+<ul>
+<li><a href="#_1">引子</a></li>
+<li><a href="#_2">上下文预算</a></li>
+<li><a href="#_3">压缩策略</a></li>
+<li><a href="#_4">记忆分层</a></li>
+<li><a href="#_5">何时该忘记</a></li>
+<li><a href="#_6">长任务的上下文管理</a></li>
+<li><a href="#_7">常见误区与排查</a></li>
+<li><a href="#_8">本章要点</a></li>
+<li><a href="#_9">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote>
+<p>上下文是 Agent 最稀缺的资源。编排它比堆砌它更重要——这一点上，加法和减法同样重要。</p>
+</blockquote>
+<h2 id="_1">引子</h2>
+<p>一个智能体在简单任务上表现优秀，在复杂任务上却频繁出错。团队的做法是增加信息：把完整的文档放进上下文、保留全部对话历史、把工具的完整返回都带上。</p>
+<p>结果与预期相反。质量没有提升，反而在某些任务上明显下降；成本涨了三倍；而且模型开始漏掉一些原本会注意到的事情——比如用户在第三轮提到的那个限制条件。</p>
+<p>这个现象的解释在第 2 章的约束一里已经出现过：<strong>上下文窗口是共享预算，全部内容都对得上账。</strong> 当你把所有信息都塞进去时，你实际上是在做一件事——<strong>让真正重要的信息，在噪声中的相对权重下降。</strong></p>
+<p>更准确地说，"模型看到更多信息"这件事包含两个相反的效应。<strong>信息效应</strong>是正的：可用的依据变多了。<strong>注意力效应</strong>是负的：每一份信息的平均注意力下降了。当后者超过前者时，加信息就是净损失。</p>
+<p>上下文工程就是在这两个效应之间做取舍的工程。它是把第 2 章的第一性原理落到具体操作上的那一章。</p>
+<h2 id="_2">上下文预算</h2>
+<p>先建立一个账本。一次模型调用的上下文里通常有五类内容，各自占用预算。</p>
+<table>
+<thead>
+<tr>
+<th>内容类别</th>
+<th>作用</th>
+<th>特征</th>
+<th>预算策略</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>系统指令</td>
+<td>身份、约束、行为准则</td>
+<td>不可压缩，必须完整</td>
+<td>优先保障，但应精简固化</td>
+</tr>
+<tr>
+<td>工具定义</td>
+<td>可用工具的描述与参数</td>
+<td>随工具数线性增长</td>
+<td>按需裁剪：只暴露当前相关的工具</td>
+</tr>
+<tr>
+<td>对话历史</td>
+<td>多轮交互的上下文</td>
+<td>无界增长，长尾价值低</td>
+<td>摘要 + 淘汰，保留关键节点</td>
+</tr>
+<tr>
+<td>检索内容</td>
+<td>外部知识依据</td>
+<td>体积大，相关性参差</td>
+<td>严格筛选 + 上限 + 优先排序</td>
+</tr>
+<tr>
+<td>工具结果</td>
+<td>执行返回</td>
+<td>单次可能极大</td>
+<td>裁剪 + 摘要 + 结构化提取</td>
+</tr>
+<tr>
+<td>中间推理</td>
+<td>模型的思考过程</td>
+<td>累积快</td>
+<td>控制长度，历史部分可压缩</td>
+</tr>
+</tbody>
+</table>
+<p><strong>预算分配的原则有三条。</strong></p>
+<p><strong>第一条：先保障不可压缩项。</strong> 系统指令、当前用户问题是必需的，它们先占用预算。剩余部分才是可分配的。</p>
+<p><strong>第二条：给每一类设上限，而不是给总量设上限。</strong> 只设总量上限会导致一种常见病：某一类内容（通常是检索结果）挤占了全部空间，其他类别被压到零。<strong>分类设限能防止单一类别垄断预算。</strong></p>
+<p><strong>第三条：预算检查要在发送前完成。</strong> 第 2 章讲过，超出窗口不是优雅降级而是报错。所以必须在装配阶段就核算，超出时按优先级淘汰，而不是发出去等报错。</p>
+<h2 id="_3">压缩策略</h2>
+<p>压缩是上下文工程的核心手段，有五种，适用场景不同。</p>
+<p><strong>策略一：摘要。</strong> 把一段较长的内容用更短的文字概括。它适合对话历史和较长的工具返回。关键是<strong>摘要要有明确的目标</strong>——"概括这段对话"产生的摘要往往无用；"提取出这段对话中已确认的事实与用户提出的约束"才有用。<strong>摘要的指令决定了摘要的价值。</strong></p>
+<p>摘要的代价是信息损失不可逆。所以有一个重要原则：<strong>摘要应该保留指针而不是试图保留全部内容。</strong> 即"关于 X 的讨论见历史消息第 N 条"，或者把原始内容保留在外部存储并只放引用。这样在需要细节时可以回查。</p>
+<p><strong>策略二：截断。</strong> 直接去掉超出预算的部分。它最便宜，但风险最高——可能截掉关键信息。实用的做法是<strong>从中间截断而不是从尾部</strong>：保留开头的任务定义与最近的内容，去掉中段的历史。因为首尾位置的信息对模型更重要（第 2 章的注意力规律）。</p>
+<p><strong>策略三：结构化提取。</strong> 不完全保留原文，而是提取所需字段。比如工具返回一个很大的 JSON，只提取其中三四个字段放回上下文。这比摘要更精确，因为它不会"概括错"，只是丢掉不需要的部分。<strong>这是处理工具返回的首选方式</strong>——因为程序知道需要哪些字段，不需要靠模型判断。</p>
+<p><strong>策略四：卸载到外部。</strong> 把内容存到文件或外部存储，在上下文里只留引用，需要时通过工具读取。这个策略的价值在于它把"上下文"这个有限资源变成了"可按需访问的存储"——<strong>相当于给模型配了一个可以随时查阅的资料柜，而不是把所有资料摊在桌面上。</strong></p>
+<p>这个策略的代价是引入了一次额外的工具调用（增加延迟与轮数）。所以它适用于"体积大但使用频率不高"的内容。</p>
+<p><strong>策略五：职责分层。</strong> 不是压缩内容，而是把不同职责的内容分开：长期稳定的指令固化在系统消息里，随任务变化的内容放在当前消息里，历史内容做摘要。<strong>分层的价值在于让每一层的淘汰策略可以不同</strong>——系统指令永不淘汰，历史可以激进淘汰。</p>
+<div class="dg">
+  <div class="dg-vs">
+    <div class="dg-col-head">压缩策略</div>
+    <div class="dg-col-head dg-alt-head">代价与适用</div>
+    <div class="dg-cell">摘要</div>
+    <div class="dg-cell dg-alt">信息损失不可逆；适合历史与长返回，需明确摘要目标</div>
+    <div class="dg-cell">截断</div>
+    <div class="dg-cell dg-alt">最便宜也最危险；宜截中段，保留首尾</div>
+    <div class="dg-cell">结构化提取</div>
+    <div class="dg-cell dg-alt">精确但需预先知道要什么；工具返回的首选</div>
+    <div class="dg-cell">卸载外部</div>
+    <div class="dg-cell dg-alt">需额外一次读取调用；适合大而低频的内容</div>
+    <div class="dg-cell">职责分层</div>
+    <div class="dg-cell dg-alt">非压缩而是组织；让各层淘汰策略可独立</div>
+  </div>
+</div>
+
+<h2 id="_4">记忆分层</h2>
+<p>"记忆"这个词在实践里被用得很含混。按认知科学的框架把它分成几层，会让设计清晰很多。</p>
+<p><strong>工作记忆</strong>是当前任务正在使用的信息：当前目标、最近的观察、待办事项。它的特征是高相关、高时效、容量有限。<strong>它对应上下文窗口本身。</strong></p>
+<p><strong>情景记忆</strong>是过去发生过的具体事件：这次会话中做过什么、上次处理这个客户时遇到过什么问题。它的特征是具体的、带时间与上下文的。<strong>它对应可检索的历史记录。</strong></p>
+<p><strong>语义记忆</strong>是沉淀下来的知识：业务规则、概念定义、常见处理方式。它的特征是与具体事件无关、可复用。<strong>它对应知识库与检索库。</strong></p>
+<p><strong>程序性记忆</strong>是"怎么做"的方法：流程步骤、工具的使用方式、解决问题的套路。它的特征是可执行的。<strong>它对应提示模板、流程定义、以及可复用的技能。</strong></p>
+<table>
+<thead>
+<tr>
+<th>记忆类型</th>
+<th>内容</th>
+<th>存储形式</th>
+<th>何时注入</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工作记忆</td>
+<td>当前目标、最近观察、待办</td>
+<td>上下文本身</td>
+<td>始终存在</td>
+</tr>
+<tr>
+<td>情景记忆</td>
+<td>过往事件与会话记录</td>
+<td>可检索的历史存储</td>
+<td>当前任务相关时按需检索</td>
+</tr>
+<tr>
+<td>语义记忆</td>
+<td>业务规则、概念定义</td>
+<td>知识库 / 检索库</td>
+<td>需要依据时检索</td>
+</tr>
+<tr>
+<td>程序性记忆</td>
+<td>流程与操作方法</td>
+<td>提示模板、流程定义</td>
+<td>按任务类型装配</td>
+</tr>
+</tbody>
+</table>
+<p><strong>这个分层最大的实用价值是回答"这条信息该放哪"。</strong> 一个常见的错误是把所有东西都往工作记忆里塞（也就是全部放进上下文），结果窗口被耗尽。分层之后，判断标准变得清晰：<strong>当任务需要的，进工作记忆；事后可能要查的，进情景记忆；任何时候都可能用到的，进语义记忆；教怎么做的，进程序性记忆。</strong></p>
+<p>另一个价值是它指导了<strong>读取策略</strong>。工作记忆是"全量加载"（因为它就是上下文），而其他三层都应该"按需检索"。<strong>把记忆当成存储而不是当成上下文，这个视角的转换能解决大部分上下文膨胀问题。</strong></p>
+<h2 id="_5">何时该忘记</h2>
+<p>这是本章最少被讨论、但实际影响很大的部分。</p>
+<p><strong>必须忘记的四种情况。</strong></p>
+<p><strong>过期信息。</strong> 有时间效力的信息在失效后必须清理。否则模型会基于已经作废的信息做决策——这类错误很难察觉，因为信息"看起来是完整的"。</p>
+<p><strong>冲突信息。</strong> 同一个事实有多份不一致的版本。留在上下文里会让模型随机选择，或者产生一个混合两者的答案。处理方式是<strong>显式解决冲突</strong>（保留最新的、标注冲突并要求澄清），而不是让两份都留着。</p>
+<p><strong>已被推翻的推理。</strong> 循环里前面的推理如果后来被证明是错的，它留在上下文里会持续影响后续决策。<strong>这是循环类系统的一个隐蔽问题</strong>：错误的中间结论会自我强化。处理方式是在得出新结论时显式说明"之前的判断 X 不成立，原因是 Y"。</p>
+<p><strong>低价值的历史细节。</strong> 已经完成的步骤的详细过程，只保留结论即可。细节留在上下文里不仅占预算，还会分散注意力。</p>
+<p><strong>清理策略有三种，按激进程度排列。</strong> 温和的（按时间淘汰最早的）、按价值的（按相关性评分淘汰最低分的）、按事件驱动的（在关键节点主动压缩，比如完成一个子目标后清理该子目标的中间过程）。</p>
+<p><strong>事件驱动的清理通常效果最好</strong>，因为它利用了结构信息——刚刚完成了一个阶段，那个阶段的中间过程就自然变得可以压缩了。在图的执行模型里，"完成一个子目标"是一个可以被识别的时刻，因此这个策略是可实现的。</p>
+<h2 id="_6">长任务的上下文管理</h2>
+<p>任务越长，上下文压力越大。有三个专门针对长任务的手段。</p>
+<p><strong>手段一：子目标切分。</strong> 把长任务分解成若干子目标，每个子目标有自己的上下文范围。完成一个子目标后压缩它的过程，只保留结论进入下一个子目标。这利用了第 15 章讲的子图隔离机制。</p>
+<p><strong>手段二：外部化便签。</strong> 让智能体把关键结论主动写到外部存储（一个文件、一段状态、一个待办列表），而不是全靠上下文记忆。<strong>这个手段看起来朴素，但它是长任务最有效的方法。</strong> 因为它把一个不受控的资源（上下文）替换成了一个受控的资源（结构化存储）。而且这个动作本身有额外收益：<strong>写下来的过程迫使模型明确"我确认了什么"，这本身就能提高质量。</strong></p>
+<p><strong>手段三：检查点作为记忆边界。</strong> 利用第 13 章的检查点机制，把"状态快照"当作记忆的锚点。恢复时从锚点重新装配上下文，而不是把全部历史重放一遍。<strong>检查点在这里不只是故障恢复手段，也是上下文管理手段。</strong></p>
+<div class="dg">
+  <div class="dg-col">
+    <div class="dg-box">长任务开始：加载目标与必要背景</div>
+    <div class="dg-arw">↓</div>
+    <div class="dg-box dg-alt">执行子目标一 → 结论写入外部便签</div>
+    <div class="dg-arw">↓ 压缩该子目标过程</div>
+    <div class="dg-box">执行子目标二（上下文只含结论与目标）</div>
+    <div class="dg-arw">↓</div>
+    <div class="dg-box dg-hl">检查点：作为记忆锚点，支持恢复</div>
+  </div>
+</div>
+
+<h2 id="_7">常见误区与排查</h2>
+<ul>
+<li><strong>"信息越多越准"</strong> → 症状：增加上下文后质量下降，模型开始忽略关键约束。根因：注意力稀释效应超过了信息效应。修法：分类设上限，优先做减法。</li>
+<li><strong>"摘要就是概括一下"</strong> → 症状：摘要保留下来了，但关键信息丢了。根因：摘要目标不明确。修法：明确摘要要提取什么（已确认事实、用户约束、未决问题）。</li>
+<li><strong>"工具返回原样放进上下文最保险"</strong> → 症状：单次调用吃掉大半预算。根因：缺少结构化提取。修法：程序侧提取所需字段，只放需要的部分。</li>
+<li><strong>"系统提示越长越全面"</strong> → 症状：每轮都消耗大量预算，且模型对其中部分指令不敏感。根因：系统指令没有精简与固化。修法：把不常用的规则拆分到按需注入的片段里。</li>
+<li><strong>"所有历史都留着，方便模型参考"</strong> → 症状：窗口被占满，早期关键约束被挤掉。根因：没有区分工作记忆与情景记忆。修法：历史按需检索，上下文只保留当前相关的。</li>
+<li><strong>"错误结论会被后续推翻，不用管"</strong> → 症状：模型反复回到已经被否决的思路。根因：被推翻的推理仍留在上下文里。修法：显式声明旧结论不成立及原因。</li>
+<li><strong>"长任务靠加大窗口解决"</strong> → 症状：成本上升，长任务质量依然不稳。根因：没有做子目标切分与外部化便签。修法：把记忆外部化，用检查点做锚点。</li>
+</ul>
+<h2 id="_8">本章要点</h2>
+<ul>
+<li>上下文是共享预算，所有内容都对得上账；扩容量不等于扩有效容量，加信息存在注意力稀释的负效应。</li>
+<li>预算分配三原则：先保障不可压缩项、给每类内容设上限（而非只设总量）、发送前完成核算。</li>
+<li>五种压缩策略：摘要（需明确目标、保留指针）、截断（宜截中段）、结构化提取（工具返回首选）、卸载外部（大而低频内容）、职责分层（让各层淘汰策略独立）。</li>
+<li>记忆四层：工作记忆（就是上下文）、情景记忆（可检索历史）、语义记忆（知识库）、程序性记忆（流程与模板）。分层最大的价值是回答"这条信息该放哪"。</li>
+<li>四种必须忘记的情况：过期、冲突、已被推翻的推理、低价值历史细节。其中"被推翻的推理"是循环系统的隐蔽陷阱。</li>
+<li>长任务三手段：子目标切分、外部化便签（最有效）、检查点作为记忆锚点。</li>
+<li>事件驱动的清理效果最好，因为它利用了"子目标完成"这个结构信号。</li>
+</ul>
+<h2 id="_9">迁移视角：如果不用这个框架</h2>
+<p>上下文工程看着像新领域，其实它是<strong>信息检索与界面设计</strong>两件旧事的结合。</p>
+<p><strong>从信息检索借来的经验：</strong> 相关性不等同于价值。传统检索系统早就知道要区分"召回了相关文档"和"文档对当前任务有用"——前者是匹配问题，后者是价值问题。上下文装配面临同样的问题：一段内容可能"相关"但占用了比它价值更大的预算。所以<strong>评估每一份内容的标准不该是"相不相关"，而是"它带来的收益是否超过它占用的预算"</strong>。</p>
+<p><strong>从界面设计借来的经验：</strong> 信息密度不是越高越好。优秀的信息设计知道要隐藏次要内容、突出关键信息、按使用频率组织层级。上下文装配是同样的工作，只是"用户"变成了模型。这条类比有一个具体推论：<strong>如果一段内容在十次调用里只用到一次，它就不该常驻在上下文里，而应该按需加载。</strong></p>
+<p><strong>从缓存设计借来的经验：</strong> 有"工作集"的概念——程序运行时反复访问的那一小部分数据。同理，一次任务执行中反复用到的信息（目标、约束、关键事实）应该常驻；而只访问一次的信息（某次检索的原文、某个工具的大返回）不该常驻。</p>
+<p>有一条更本质的结论值得带走：<strong>任何一个有限的、共享的、被多方争夺的资源，都需要显式的分配策略。</strong> 上下文窗口就是这样一个资源。没有显式的分配策略时，实际分配由"谁写入得最晚/最多"决定——这是最坏的一种分配方式，因为它是随机的。所以上下文工程的第一个动作不是学技巧，而是<strong>建立一本账</strong>：有哪些类别、各自占多少、谁在抢、超了怎么淘汰。</p>
+<p>最后一条与整个第五部分呼应：<strong>上下文工程的能力上限，最终由数据结构决定，而不是由提示技巧决定。</strong> 如果信息在存储里是一团无结构的文本，你就只能靠摘要和截断；如果信息是结构化的（有类型、有来源、有时间、有置信度），你就可以做精确的筛选、淘汰与冲突解决。<strong>你在数据层投入的结构化工作，会在上下文层反复得到回报。</strong></p>
+<div class="pager"><a class="prev" href="ch20-agent-loop-patterns.html"><span>上一章</span><b>第 20 章　Agent Loop 的通用模式</b></a><a class="next" href="ch22-design-your-own-harness.html"><span>下一章</span><b>第 22 章　如果你从零设计一个 Harness</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

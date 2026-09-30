@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 8 章　提示与解析：IO 边界的类型契约</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="layout">
+  <aside class="side"><a class="side-brand" href="index.html"><b>智能体运行时原理</b><span>从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part">第一部分　问题空间<em>框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html"><i>01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html"><i>02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html"><i>03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html"><i>04</i>LangChain 家族的全景与演进脉络</a><div class="side-part">第二部分　LangChain 的抽象原理<em>组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html"><i>05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html"><i>06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html"><i>07</i>模型与消息：LLM 适配层的原理</a><a class="item on" href="ch08-prompt-and-parsing.html"><i>08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html"><i>09</i>检索增强（RAG）的原理</a><div class="side-part">第三部分　LangGraph：从链到图<em>状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html"><i>10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html"><i>11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html"><i>12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html"><i>13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html"><i>14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html"><i>15</i>多智能体拓扑</a><div class="side-part">第四部分　依赖族与生态<em>契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html"><i>16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html"><i>17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html"><i>18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html"><i>19</i>部署与运行时形态</a><div class="side-part">第五部分　原理迁移<em>超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html"><i>20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html"><i>21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html"><i>22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html"><i>23</i>结语：框架会变，原理不会</a><div class="side-part">附录<em>速查与自检</em></div><a class="item" href="apa-glossary.html"><i>A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html"><i>B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot">共 23 章 + 2 个附录 · 原理优先<br>零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main">
+<article>
+<h1>第 8 章　提示与解析：IO 边界的类型契约</h1>
+<div class="tocbox"><b>本章小节</b>
+<ul>
+<li><a href="#_1">引子</a></li>
+<li><a href="#_2">提示模板的本质是函数</a></li>
+<li><a href="#_3">动态提示：三种注入机制</a></li>
+<li><a href="#_4">解析器的三层职责</a></li>
+<li><a href="#_5">什么时候该放弃解析</a></li>
+<li><a href="#_6">常见误区与排查</a></li>
+<li><a href="#_7">本章要点</a></li>
+<li><a href="#_8">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote>
+<p>提示模板是函数，解析器是守门人。一个把数据变成消息，一个把不可靠的输出变成可靠的数据。</p>
+</blockquote>
+<h2 id="_1">引子</h2>
+<p>有一个问题在几乎所有项目里都会出现，而且第一次出现时都很让人费解：</p>
+<p>"代码没变，提示没变，为什么昨天能解析出来，今天不行？"</p>
+<p>答案通常不在代码里。解析失败的原因分布大致是这样的：很少一部分是输入数据异常，一部分是模型切换或参数调整，剩下的大部分是<strong>上下文里少了一点点东西</strong>——某次对话历史被裁剪掉了一行、某个检索结果这次没命中、某次工具返回的内容比平时长了一点。输出格式在这种压力下发生了细微偏移，而解析器的容错设计不足以吸收它。</p>
+<p>这件事说明一个不太舒服的结论：<strong>在概率性系统里，IO 边界不是"接口"，而是"防线"。</strong> 你没法假设对面会给出合法输入，只能假设它大多数时候会，然后设计一套能在少数时候安全承接的机制。</p>
+<p>这一章讲这条防线的两侧：进入侧（提示模板如何把数据变成消息）和产出侧（解析器如何把不确定输出变成确定数据）。</p>
+<h2 id="_2">提示模板的本质是函数</h2>
+<p>把提示模板理解成"带占位符的字符串"是常见但不充分的。更准确的理解是：<strong>它是一个纯函数，输入是数据，输出是消息序列。</strong></p>
+<p>这个视角带来几个结论。</p>
+<p><strong>第一，函数是纯净的，所以它不该有副作用。</strong> 模板里不应该做网络请求、不应该读全局状态。需要外部数据时，应该由外部先取好，作为变量传进来。这个约束保证了模板的可测试性——同样的输入永远产生同样的消息，可以写单元测试。</p>
+<p><strong>第二，函数的参数要有类型。</strong> 变量应该声明它是什么类型：一段文本、一个数字、一组文档、一段历史。类型声明的作用不只是文档，它还让校验可以在发送前发生——如果变量缺失或类型不符，应该在拼装阶段就报错，而不是让一个空字符串流进模型然后产生一个莫名其妙的回答。</p>
+<p><strong>第三，函数的输出形状要被显式控制。</strong> 模板决定了消息的角色结构。把哪些内容放进系统消息、哪些放进人类消息，是一个有后果的决定：系统消息里的内容对模型来说更接近"设定"，人类消息里的内容更接近"输入"。放错位置的典型症状是提示注入风险上升（把外部数据放进了系统消息）或者约束失效（把行为准则放在了人类消息里）。</p>
+<p><strong>第四，模板可组合。</strong> 如果模板是函数，那么它就能像函数一样被复用与嵌套：一个"基础人设模板"可以被多个具体场景模板引用；一个"输出格式约定"可以作为一个片段被拼到多个模板里。这让提示词资产的维护方式从"复制粘贴"变成"组合"，这是提示工程能否规模化管理的分水岭。</p>
+<h2 id="_3">动态提示：三种注入机制</h2>
+<p>静态模板在真实系统里很快就不够用，因为提示内容往往依赖运行时的状态。有三种常见的动态化机制，各自解决不同的问题。</p>
+<p><strong>机制一：示例选择。</strong> 从一批示例中挑出最相关的几个，注入到提示里作为参考。它的动机是：示例的数量受上下文预算限制，所以关键不是"有多少示例"，而是"这次任务该给哪几个示例"。选择依据通常是语义相似度——用当前输入去检索最相似的示例。</p>
+<p>这里有一个容易忽略的问题：<strong>相似度选出的示例可能是"错误示范"。</strong> 如果示例库里既有正确案例也有反例，纯语义检索选出的可能是反例。解决办法是把示例标注为"正面示例"和"反面示例"，在选择时分别选取，并在提示里明确区分。</p>
+<p><strong>机制二：条件片段。</strong> 根据运行时条件决定提示里是否包含某一段。比如"如果这次任务涉及金额，就加入金额处理规范"。它的价值在于<strong>用条件缩减提示长度</strong>——把所有可能用到的规范都写进提示，会导致上下文被无关内容占据，同时稀释模型的注意力。</p>
+<p>条件片段的代价是提示的组合状态变多，测试难度上升。控制办法是把条件片段数量压到少数几个，并确保每个片段的触发条件是明确的、可枚举的。</p>
+<p><strong>机制三：上下文注入。</strong> 把检索到的文档、工具返回的结果、之前的对话摘要等外部信息插入提示。这是最常用也最容易失控的一种。它的核心矛盾是：<strong>注入的内容越多，模型可用的信息越多，但注意力被稀释得越严重。</strong> 第 9 章与第 21 章会分别从检索侧和上下文工程侧展开，这里只强调一条：注入内容的<strong>结构标记</strong>很重要——每一段外部内容都应该有清晰的边界与来源标注，让模型知道"这段是引用，不是指令"。这既是准确率问题，也是提示注入的防线之一。</p>
+<div class="dg">
+  <div class="dg-flow">
+    <div class="dg-box">静态模板<br><small>结构与人设</small></div>
+    <div class="dg-arw">+</div>
+    <div class="dg-box dg-alt">示例选择<br><small>挑最相关的几个</small></div>
+    <div class="dg-arw">+</div>
+    <div class="dg-box dg-alt">条件片段<br><small>按需裁剪</small></div>
+    <div class="dg-arw">+</div>
+    <div class="dg-box dg-hl">上下文注入<br><small>带边界与来源标记</small></div>
+  </div>
+</div>
+
+<h2 id="_4">解析器的三层职责</h2>
+<p>输出解析器经常被简化为"把文本转成对象"，但它的实际职责有三层，而且<strong>三层缺一不可</strong>。</p>
+<p><strong>第一层：抽取。</strong> 从模型的原始输出里定位出目标数据。这一步在结构受控时很简单（输出本身就是结构化的），但在提示约束路线下常常需要处理包裹（模型额外说了几句话）、多段（模型输出了多个候选）、以及格式变体（用了不同引号、不同分隔符）。抽取的设计原则是<strong>宽松</strong>：尽力找到目标数据，而不是严格要求格式完全一致。严格在这里没有收益，只会把"能救回来的输出"变成"失败"。</p>
+<p><strong>第二层：校验。</strong> 检查抽取出的数据是否满足契约——必填字段是否齐全、类型是否正确、取值是否在允许范围内。这一步的设计原则是<strong>严格</strong>。第一层宽松、第二层严格，这个组合不是矛盾，而是分工：<strong>宽松地找，严格地判。</strong></p>
+<p><strong>第三层：修复与升级。</strong> 校验失败后怎么办，这是区分成熟与不成熟实现的地方。常见策略有四种，按"尝试成本"递增排列。</p>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>做法</th>
+<th>适用与风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>修复</td>
+<td>局部修补明显问题（补引号、去多余文本、类型转换）</td>
+<td>成本最低；风险是"修"出语义错误</td>
+</tr>
+<tr>
+<td>重试</td>
+<td>带上失败原因让模型重新输出一次</td>
+<td>常用；必须限次数，且要重述契约</td>
+</tr>
+<tr>
+<td>降级</td>
+<td>换更宽松的解析方式，或改用工具调用路线</td>
+<td>可靠性好；实现成本高</td>
+</tr>
+<tr>
+<td>升级</td>
+<td>抛出结构化错误，交给更上层处理</td>
+<td>必须存在，否则失败会被静默吞掉</td>
+</tr>
+</tbody>
+</table>
+<p><strong>修复策略最需要警惕。</strong> 局部修补看起来省事，但它可能把一个"格式错误"悄悄变成一个"语义错误"。比如把字符串 "3" 修成数字 3 是无害的；把 "2024.03.15" 修成某个日期对象时如果猜错了分隔符含义，就产生了错误数据但没有任何告警。判断标准是：<strong>修复只允许做"无歧义的还原"，一旦需要猜测，就应该走重试而不是修复。</strong></p>
+<p><strong>升级策略最需要坚持。</strong> 大量系统的实际行为是：解析失败 → 返回默认值 → 系统继续运行。这看起来"稳健"，实际上是把错误变成了沉默的数据污染。正确的做法是让失败可见，由上层决定是降级用户体验还是阻断流程。</p>
+<h2 id="_5">什么时候该放弃解析</h2>
+<p>这是本章最有实践价值的一个判断。答案是：<strong>当你的解析逻辑开始变得复杂时，说明路线选错了。</strong></p>
+<p>具体的信号清单：</p>
+<ul>
+<li>解析器里出现了大量针对模型输出风格的适配分支（"如果它用 A 就说……如果用 B 就……"）。这说明你在用提示约束路线做本该用结构化通道做的事。</li>
+<li>需要写多轮修复逻辑才能保证成功率。这说明提示约束的可靠性已经接近上限。</li>
+<li>解析器的测试用例数量远超业务逻辑本身。这说明失败模式太多了。</li>
+<li>业务代码里开始出现"解析失败时用正则兜底"。这通常意味着三重失败已经发生。</li>
+</ul>
+<p>出现这些信号时，正确的动作是<strong>换路线</strong>，而不是继续加固解析器。具体来说：把产出结构的能力从"提示请求"升级为"结构化保证"（第 7 章的三条路线），把解析器的职责从"猜格式"收缩为"校验语义"。</p>
+<p>反过来，解析器也不该盲目追求强类型约束。如果只是需要一段人类可读的文本（比如给用户的回答），硬加上结构约束会增加失败面却没有收益。判断标准是：<strong>这份输出的消费方是程序还是人？</strong> 程序消费，就要结构保证；人消费，宽松就好。</p>
+<h2 id="_6">常见误区与排查</h2>
+<ul>
+<li><strong>"提示词写详细点就能保证格式"</strong> → 症状：线上偶发解析失败，且失败率随上下文变长而上升。根因：提示是请求不是保证。修法：关键输出改走结构化保证路线，提示约束只作为降级。</li>
+<li><strong>"解析失败就返回默认值，保证系统不崩"</strong> → 症状：系统从不报错，但结果质量时好时坏且无法归因。根因：失败被静默吸收。修法：失败必须可见，至少要记录并可统计失败率。</li>
+<li><strong>"外部内容直接拼进提示就行"</strong> → 症状：模型把检索内容里的文字当成指令执行。根因：缺少结构边界与来源标注。修法：每段外部内容都要有明确包裹和"以下为引用内容"的标记。</li>
+<li><strong>"示例越多效果越好"</strong> → 症状：提示变长后效果反而下降，成本上升。根因：示例挤占预算并稀释注意力。修法：改为按相关性动态选择少量示例，并区分正反例。</li>
+<li><strong>"模板里做点数据处理很方便"</strong> → 症状：模板难以测试，同一输入产生不同消息。根因：模板产生了副作用或依赖了外部状态。修法：数据准备与消息拼装分离，模板只做纯变换。</li>
+<li><strong>"修复逻辑写得聪明一点就能救回来"</strong> → 症状：偶发产生错误数据但没有告警。根因：修复过程中引入了猜测。修法：只做无歧义还原，需要猜测时改为重试或显式失败。</li>
+</ul>
+<h2 id="_7">本章要点</h2>
+<ul>
+<li>提示模板是纯函数：输入数据、输出消息序列。无副作用、参数有类型、输出形状显式、可组合，这四条决定了提示资产能否规模化维护。</li>
+<li>动态化的三种机制：示例选择、条件片段、上下文注入；各自解决不同问题，也各自引入复杂度。</li>
+<li>注入外部内容必须带清晰边界与来源标记，这既是准确率问题也是注入防线。</li>
+<li>解析器有三层职责：抽取（宽松）、校验（严格）、修复与升级。宽松找、严格判是分工而非矛盾。</li>
+<li>修复只允许做无歧义还原；需要猜测时应该重试。升级路径必须存在，否则失败会被静默吸收。</li>
+<li>当解析逻辑开始复杂，说明路线选错了，应该把"提示约束"升级为"结构化保证"，而不是加固解析器。</li>
+<li>判断是否需要强结构约束的标准：输出的消费方是程序还是人。</li>
+</ul>
+<h2 id="_8">迁移视角：如果不用这个框架</h2>
+<p>这一章讲的是所有不确定输入系统的通病，只是 LLM 让它变得极端。</p>
+<p><strong>"宽松找、严格判"这个组合</strong>可以直接迁移到任何解析场景：日志解析、爬虫数据抽取、第三方接口对接、用户输入表单。它的普适理由是：输入侧的不确定性是外生的，你无法消除它，只能尽量多救；而校验侧的严格性是内生的，你完全可以保证。把两者分开，各用各的策略，是一种稳定的工程姿态。</p>
+<p><strong>"不要用修复掩盖失败"这条原则</strong>则有更普遍的适用性。任何"自动纠正"逻辑都应该遵守同一条边界：<strong>纠正的是形式，不是语义。</strong> 形式错误（大小写、空格、引号）可以自动修；语义歧义（这个日期是几月几号、这个金额是元还是分）必须上报。跨越这条线的"智能修复"是数据污染的主要来源之一，而且它造成的错误极难被追溯，因为系统日志里显示的是"成功"。</p>
+<p>还有一条关于提示工程本身的结论值得记住：<strong>提示词的质量不完全取决于写得多好，还取决于它的产出有多大比例是"被保证"而不是"被请求"的。</strong> 一个提示写得再好，只要关键输出依赖模型的自觉，系统就处在脆弱状态。所以成熟的提示工程有相当一部分工作不是"优化措辞"，而是<strong>把能转移到结构化通道的东西转移出去</strong>，让提示只承担它真正擅长的事——表达意图、提供上下文、引导风格。</p>
+<div class="pager"><a class="prev" href="ch07-model-adaptation.html"><span>上一章</span><b>第 7 章　模型与消息：LLM 适配层的原理</b></a><a class="next" href="ch09-rag-principles.html"><span>下一章</span><b>第 9 章　检索增强（RAG）的原理</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

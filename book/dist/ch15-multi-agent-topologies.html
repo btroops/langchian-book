@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 15 章　多智能体拓扑</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="layout">
+  <aside class="side"><a class="side-brand" href="index.html"><b>智能体运行时原理</b><span>从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part">第一部分　问题空间<em>框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html"><i>01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html"><i>02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html"><i>03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html"><i>04</i>LangChain 家族的全景与演进脉络</a><div class="side-part">第二部分　LangChain 的抽象原理<em>组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html"><i>05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html"><i>06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html"><i>07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html"><i>08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html"><i>09</i>检索增强（RAG）的原理</a><div class="side-part">第三部分　LangGraph：从链到图<em>状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html"><i>10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html"><i>11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html"><i>12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html"><i>13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html"><i>14</i>中断与人在回路</a><a class="item on" href="ch15-multi-agent-topologies.html"><i>15</i>多智能体拓扑</a><div class="side-part">第四部分　依赖族与生态<em>契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html"><i>16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html"><i>17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html"><i>18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html"><i>19</i>部署与运行时形态</a><div class="side-part">第五部分　原理迁移<em>超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html"><i>20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html"><i>21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html"><i>22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html"><i>23</i>结语：框架会变，原理不会</a><div class="side-part">附录<em>速查与自检</em></div><a class="item" href="apa-glossary.html"><i>A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html"><i>B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot">共 23 章 + 2 个附录 · 原理优先<br>零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main">
+<article>
+<h1>第 15 章　多智能体拓扑</h1>
+<div class="tocbox"><b>本章小节</b>
+<ul>
+<li><a href="#_1">引子</a></li>
+<li><a href="#_2">什么时候真的需要多智能体</a></li>
+<li><a href="#_3">三种拓扑</a></li>
+<li><a href="#_4">子图与命名空间</a></li>
+<li><a href="#_5">通信的代价</a></li>
+<li><a href="#_6">死循环与失控的护栏</a></li>
+<li><a href="#_7">何时不该用多智能体</a></li>
+<li><a href="#_8">常见误区与排查</a></li>
+<li><a href="#_9">本章要点</a></li>
+<li><a href="#_10">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote>
+<p>多智能体是一个组织设计问题，不是一次技术升级。把一个人的活分给三个人干，能不能干得更好，取决于任务本身。</p>
+</blockquote>
+<h2 id="_1">引子</h2>
+<p>一个团队做了个单智能体的研究报告生成器，效果不错但有两个抱怨：一是当任务涉及多个领域时（比如"分析这家公司的技术趋势与财务风险"），智能体容易顾此失彼——它会在某个子问题上钻得很深，然后草草处理另一个；二是它拿到的所有工具都堆在一个上下文里，工具选择经常出错。</p>
+<p>于是决定改成多智能体：一个主管负责拆任务和汇总，两个专家分别负责技术和财务，各自持有自己的工具集。</p>
+<p>改造完成后，一些指标确实改善了：工具选择的准确率上升（因为每个专家只看到自己那几个工具），单个子问题的深度也提升了。但同时出现了两个新问题：<strong>总耗时翻了一倍多</strong>，以及<strong>最终报告的连贯性变差</strong>——两个部分的结论有冲突，主管在汇总时并没有发现。</p>
+<p>这个结果很有代表性。多智能体确实解决了"上下文被摊薄"和"工具选择困难"这两个问题，代价是引入了通信开销和一致性风险。<strong>它是一次权衡，不是一个升级。</strong></p>
+<p>这一章要讲清这个权衡的结构：有几种拓扑可选、各自的成本在哪里、什么时候不值得。</p>
+<h2 id="_2">什么时候真的需要多智能体</h2>
+<p>先把动机说清楚，因为很多多智能体方案是在不需要的时候被引入的。</p>
+<p>有三个动机是成立的。</p>
+<p><strong>动机一：上下文隔离。</strong> 单个智能体承担多个领域时，所有领域的指令、示例、工具、中间结果都挤在同一个上下文里。这既稀释注意力（第 2 章讲的约束一），也增加了工具误选的概率。拆分之后，每个智能体只携带自己领域的信息，上下文更精炼。</p>
+<p><strong>动机二：工具集隔离。</strong> 工具可区分度是调用准确率的关键（第 7 章）。把二十个工具拆成四组各五个，每组的决策难度显著下降。这不是"分工更清晰"这种软性理由，而是可测量的准确率提升。</p>
+<p><strong>动机三：并行与独立演化。</strong> 独立的子任务可以并行执行，缩短总时长。同时，每个智能体的提示、工具、评估可以独立迭代，不必担心改动影响其他人。</p>
+<p>还有两个动机<strong>不成立，但经常被当成理由</strong>。</p>
+<p><strong>"多智能体更像人脑/更像团队，所以更强"。</strong> 这是一个类比谬误。模型的协作方式与人不同：人之间通过共享的默契和长期记忆协作，模型之间只能通过文本传递信息，且每次传递都伴随信息损失。</p>
+<p><strong>"把复杂问题拆开，每个都会变简单"。</strong> 拆开确实让每个子问题变简单，但<strong>引入了新的问题：如何拆得准确、如何保证各部分一致、如何汇总。</strong> 如果这些问题比原问题更难，拆分就是净亏。引子里的案例正是这种情况——子问题变简单了，但汇总环节成了新的失败点。</p>
+<p>判断标准可以这样表述：<strong>只有当"上下文隔离"或"工具集隔离"能带来可测量的收益时，拆分才值得。</strong> 如果拆分只是出于结构上的整洁感，不要做。</p>
+<h2 id="_3">三种拓扑</h2>
+<p>多智能体的组织方式主要有三类，它们的差异在于"谁来决定下一步"。</p>
+<p><strong>拓扑一：主管（Supervisor）。</strong> 一个主管智能体负责拆解任务、分派给下属、收集结果、决定是否继续。下属之间不直接通信，都只与主管交互。</p>
+<p>这个拓扑的优点是结构清晰、控制集中——所有的路由决策都在一个地方，容易理解也容易加约束（比如"最多分派五轮"）。缺点是主管成为瓶颈：<strong>它需要理解全部任务的全局，并且每轮都要被调用一次。</strong> 任务越复杂，主管的上下文压力越大；轮次越多，主管的调用成本在总成本里的占比越高。</p>
+<div class="dg">
+  <div class="dg-col">
+    <div class="dg-box dg-hl">主管：拆解 · 分派 · 汇总 · 收敛判断</div>
+    <div class="dg-arw">↓ 分派 / ↑ 汇报</div>
+    <div class="dg-seq">
+      <div class="dg-box">专家 A</div>
+      <div class="dg-box">专家 B</div>
+      <div class="dg-box">专家 C</div>
+    </div>
+  </div>
+</div>
+
+<p><strong>拓扑二：群体（Swarm）。</strong> 智能体之间可以直接把控制权交接给对方，没有中心节点。每个智能体根据当前情况决定"我处理完了，接下来交给谁"。</p>
+<p>优点是灵活：路径不受中心节点视野的限制，适合"流程本身是探索性的"任务。缺点是<strong>全局行为难以预测也难以约束</strong>——因为没有一处代码能说明"整体允许走多远"。在群体拓扑里，死循环的风险最高，约束的施加也最困难。</p>
+<p><strong>拓扑三：层级（Hierarchical）。</strong> 主管下面还有主管，形成多层结构。</p>
+<p>它的动机来自于"单个主管的上下文也会被压垮"这个现实。当子任务数量超过一定规模，一层结构的主管无法同时掌握所有细节，于是引入中间层做局部汇总，再向上汇报。代价是<strong>信息在每一层都会损失一次</strong>（汇总本身就是有损压缩），层数越多，顶层看到的越抽象。所以层级要克制：两层通常够用，三层以上就要怀疑是不是任务划分本身有问题。</p>
+<table>
+<thead>
+<tr>
+<th>拓扑</th>
+<th>决策位置</th>
+<th>优点</th>
+<th>主要风险</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主管</td>
+<td>中心节点</td>
+<td>结构清晰、易加约束、易观测</td>
+<td>中心成为瓶颈；轮次成本集中在主管</td>
+</tr>
+<tr>
+<td>群体</td>
+<td>各节点自行交接</td>
+<td>灵活、路径不受中心视野限制</td>
+<td>全局行为难预测；死循环风险最高</td>
+</tr>
+<tr>
+<td>层级</td>
+<td>多层中心</td>
+<td>支撑更大规模的任务拆解</td>
+<td>信息逐层有损；层数越多越抽象</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_4">子图与命名空间</h2>
+<p>把一个智能体做成一棵"子图"（可以嵌进更大的流程里），是工程实现上的关键机制。它带来的最重要的一件事是<strong>作用域隔离</strong>。</p>
+<p><strong>状态隔离。</strong> 子图有自己的状态结构，父图有父图的状态。两者通过明确的输入输出边界交互——父图给子图提供初始状态，子图返回结果。这就避免了"所有字段混在一个巨型状态里"的问题。</p>
+<p><strong>命名空间。</strong> 因为状态是隔离的，同一套子图可以被实例化多次（比如三个并行的研究子任务），每次实例都有自己的状态空间。这靠的是给实例分配不同的标识。<strong>没有命名空间隔离，同一个子图跑两次就会互相覆盖状态。</strong></p>
+<p><strong>消息历史的隔离。</strong> 这一点很重要：子智能体在处理自己的子任务时，会产生自己的消息历史。如果这些历史全部混进父图的上下文，父图的上下文会迅速膨胀。隔离之后，父图只看到子图的<strong>结论</strong>，而不是它的全部过程。</p>
+<p>这个隔离带来一个有趣的设计自由度：<strong>子智能体可以在自己的作用域里"想得很长"，而对外只交付一个精炼的结果。</strong> 这是控制上下文膨胀的有效手段——相当于给每个子任务配备了一个私人的工作台，只在结束时把成品交上去。</p>
+<p>代价是<strong>过程不可见</strong>。父图看不到子图的中间推理，这对调试是一个损失。缓解办法是通过追踪机制把子图内部的执行也记录下来（第 18 章），而不是把中间过程塞进状态。</p>
+<div class="dg">
+  <div class="dg-vs">
+    <div class="dg-col-head">子图隔离带来的</div>
+    <div class="dg-col-head dg-alt-head">代价</div>
+    <div class="dg-cell">状态作用域独立，避免巨型状态</div>
+    <div class="dg-cell dg-alt">需要显式设计输入输出边界</div>
+    <div class="dg-cell">同一子图可多实例并行</div>
+    <div class="dg-cell dg-alt">中间过程在父图中不可见</div>
+    <div class="dg-cell">父图上下文只接收结论，可控增长</div>
+    <div class="dg-cell dg-alt">子图内部失败需要显式向上传递</div>
+  </div>
+</div>
+
+<h2 id="_5">通信的代价</h2>
+<p>多智能体的核心成本在通信，而通信的成本有三个来源，都需要在设计时计入。</p>
+<p><strong>成本一：上下文膨胀。</strong> 每一次交接都意味着把一部分信息传递给下一个智能体。传递的信息会进入对方的上下文并占用预算。当交接次数增加，累积的上下文会快速膨胀。缓解办法是<strong>传递结论而非过程</strong>：交接时只传"已确认的事实、已做出的决定、待解决的问题"，不传完整的对话历史与中间推理。</p>
+<p><strong>成本二：信息丢失。</strong> 每一次"汇总"都是有损压缩。主管把三个专家的结论合成一个总述时，细节必然会丢。丢失的细节如果恰好是后续决策所需要的，就会导致错误决策而且难以察觉。缓解办法是<strong>在汇总时保留引用</strong>——不是保留原文，而是保留"这个结论来自哪个子任务、依据是什么"的指针，需要时可以回查。</p>
+<p><strong>成本三：延迟累积。</strong> 每一次交接都是一次模型调用，都要花时间。如果任务需要十次交接，总延迟就是单次延迟的十倍以上。<strong>这是多智能体最常见的意外后果</strong>，因为设计时通常只关注质量指标，忽略了延迟。</p>
+<p>三条缓解原则可以总结为：<strong>能合并的调用不要拆开</strong>（减少交接次数）；<strong>能传结论的不要传过程</strong>（控制上下文膨胀）；<strong>能保留指针的不要试图保留全部</strong>（防止信息丢失又控制膨胀）。</p>
+<h2 id="_6">死循环与失控的护栏</h2>
+<p>多智能体系统的失控风险高于单智能体，原因很直接：<strong>决策分散在多个节点</strong>，没有任何一个节点能看到全局。因此护栏必须由外部机制提供，而不能依赖智能体的自觉。</p>
+<p>四类护栏，建议全部配置。</p>
+<p><strong>预算型护栏。</strong> 总步数上限、总 token 上限、总成本上限、总时长上限。任何一项触顶即中止。这是最基础也是最有效的一道防线。</p>
+<p><strong>收敛型护栏。</strong> 检测"是否在原地打转"。实现方式可以是状态的单调性检查（比如"已完成事项集合"是否还在增长）、或者是重复检测（同样的交接是否已经发生过一次以上）。<strong>没有进展检测的系统在遇到困难任务时不会失败，而是会无限尝试</strong>——这是最难排查的一类故障。</p>
+<p><strong>权限型护栏。</strong> 不是所有智能体都该有全部工具权限。特别是有副作用的工具（写数据、发消息、调支付），应该限制在特定角色手里，并且限定调用次数。这一条在群体拓扑里尤其重要，因为交接路径不可预测。</p>
+<p><strong>审批型护栏。</strong> 高风险动作走人在回路（第 14 章）。这一条是最后一道闸门，用于兜住前三条没有覆盖住的情况。</p>
+<div class="dg">
+  <div class="dg-stack">
+    <div class="dg-layer"><span class="dg-tag">预算型</span>步数 · token · 成本 · 时长，触顶即止</div>
+    <div class="dg-layer"><span class="dg-tag">收敛型</span>进展单调性检查 · 重复交接检测</div>
+    <div class="dg-layer"><span class="dg-tag">权限型</span>按角色限制工具集与调用次数</div>
+    <div class="dg-layer"><span class="dg-tag">审批型</span>不可逆动作前插入人工闸门</div>
+  </div>
+</div>
+
+<h2 id="_7">何时不该用多智能体</h2>
+<p>这一节可能是本章最有价值的部分，因为过度使用多智能体是这个领域最常见的架构误区。</p>
+<p><strong>信号一：单智能体的失败原因是"上下文里没有所需信息"，而不是"上下文太多"。</strong> 如果模型犯错是因为缺信息，那么拆分只会让每个子智能体更缺信息。这种情况下应该做的是改进检索与上下文装配（第 21 章），而不是拆分。</p>
+<p><strong>信号二：子任务之间存在大量往返。</strong> 如果 A 需要 B 的中间结果、B 又需要 A 的，那它们本就不该被拆开。拆分的前提是<strong>子任务之间低耦合</strong>——这不是"应该尽量低耦合"这种原则性说法，而是硬约束：高耦合的任务拆开后会退化成"通过消息来回传参"，比单体的直接内存共享慢十倍、贵十倍。</p>
+<p><strong>信号三：总延迟已经接近上限。</strong> 多智能体几乎总是增加延迟。如果当前延迟已经让用户不满，拆分只会让情况更糟。</p>
+<p><strong>信号四：任务短、步骤少。</strong> 如果整个任务只需要三四步，拆分的开销（拆解、分派、汇总各一次调用）就占了总调用数的一半以上。这种情况下多智能体的收益几乎不可能为正。</p>
+<p><strong>信号五：团队还没有稳定的单智能体基线和评估能力。</strong> 这一点容易被忽略但很关键：多智能体的调试难度是单体的数倍。如果没有单智能体阶段的评估体系（第 18 章），改造成多智能体后你无法判断变化是改善了还是恶化了。</p>
+<p>把这五个信号合起来，可以得到一个朴素的建议：<strong>先做一个尽可能好的单智能体，把它的失败模式分析清楚。只有当失败原因被明确归因为"上下文隔离不足"或"工具集过大"时，才考虑拆分。</strong> 这个顺序不是保守，而是因为它让每一步的因果都清楚可查。</p>
+<h2 id="_8">常见误区与排查</h2>
+<ul>
+<li><strong>"多智能体比单智能体更强"</strong> → 症状：改造后质量提升有限，延迟与成本大幅上升。根因：把组织隐喻当成了性能保证。修法：明确拆分的收益来源是"上下文隔离"还是"工具集隔离"，并测量。</li>
+<li><strong>"智能体之间应该充分交流，信息越多越好"</strong> → 症状：上下文迅速膨胀，成本飙升，延迟累积。根因：传递了过程而非结论。修法：交接只传"确认的事实、已做的决定、待解决的问题"，细节用引用保留。</li>
+<li><strong>"主管会自己判断什么时候结束"</strong> → 症状：偶发的长时间运行，或在未完成时提前收敛。根因：缺少外部的收敛检测与预算约束。修法：配置预算型与收敛型护栏。</li>
+<li><strong>"交接过一次就说明这条路径可行，可以继续"</strong> → 症状：两个智能体互相交接，形成环。根因：缺少重复交接检测。修法：记录交接历史，对重复路径设阈值。</li>
+<li><strong>"子任务拆分得越细，每个越容易做"</strong> → 症状：汇总环节成为新的失败点，结论之间互相矛盾而无人发现。根因：低估了汇总的一致性成本。修法：在汇总环节加入一致性检查（冲突检测），而不是假设汇总只是拼接。</li>
+<li><strong>"每个智能体都配全套工具，方便"</strong> → 症状：误用有副作用工具，或调用次数失控。根因：权限没有按角色收窄。修法：按职责分配最小工具集，并限制调用次数。</li>
+</ul>
+<h2 id="_9">本章要点</h2>
+<ul>
+<li>多智能体的成立动机只有三个：上下文隔离、工具集隔离、并行与独立演化。组织隐喻不是动机。</li>
+<li>判断是否值得拆分的关键问题：失败原因是不是"上下文太多"或"工具集过大"？如果是"缺信息"，拆分只会更糟。</li>
+<li>三种拓扑：主管（易约束、中心成瓶颈）、群体（灵活、最难约束）、层级（支撑更大规模、信息逐层有损）。两层通常够用。</li>
+<li>子图机制的核心价值是作用域隔离：状态独立、可多实例、父图只接收结论，是控制上下文膨胀的有效手段；代价是过程不可见。</li>
+<li>通信的三类成本：上下文膨胀、信息丢失、延迟累积。三条缓解原则：少拆调用、传结论不传过程、保留指针而非全文。</li>
+<li>四类护栏必须全部配置：预算型、收敛型、权限型、审批型。其中收敛检测最容易被忽略，而没有它的系统在困难任务上会无限尝试而不是失败。</li>
+<li>五个不该用多智能体的信号：缺信息而非上下文过多、子任务高耦合、延迟已接近上限、任务短步骤少、没有单智能体基线。</li>
+<li>正确的顺序是：先把单智能体做到尽可能好，明确归因失败原因，再考虑拆分。</li>
+</ul>
+<h2 id="_10">迁移视角：如果不用这个框架</h2>
+<p>多智能体的组织问题与人类组织的分工问题结构相同，但有一条决定性的差异：<strong>模型的沟通带宽远低于人。</strong> 两个人协作时，大量信息通过共享的上下文、默契、即时反馈传递，几乎零成本。模型之间只能通过显式文本传递，每一次都占预算、都引入损失。</p>
+<p>这个差异改变了分工的收益公式。人组织里"分工明确"几乎总是好事；在多智能体里，<strong>分工的收益必须覆盖通信成本</strong>，而这个成本比直觉高得多。所以判断标准要更严格：只有当隔离带来的收益（准确率、上下文健康度）可以被测量，且明显超过通信代价时，拆分才成立。</p>
+<p>有三条经验可以带到更广的范围（其实也适用于团队设计）。</p>
+<p><strong>第一条：先优化单点，再考虑分工。</strong> 一个岗位做不好一件事，往往不是"需要更多人"，而是"缺少工具或信息"。这个诊断在任何组织形式里都适用。</p>
+<p><strong>第二条：层次越多，信息损失越大。</strong> 每一层汇总都是一次有损压缩。所以组织的深度应该由"需要处理的规模"决定，而不是由"看起来更完整"决定。</p>
+<p><strong>第三条：分散决策必须配外部约束。</strong> 决策权下放的同时，必须建立不依赖决策者自觉的约束机制（预算、权限、终止条件）。这一点在自动化系统里比在人组织里更关键——因为人会有疲劳感和常识边界，而程序会忠实地沿着错误路径一直走下去。</p>
+<div class="pager"><a class="prev" href="ch14-interrupts-and-hitl.html"><span>上一章</span><b>第 14 章　中断与人在回路</b></a><a class="next" href="ch16-schema-contracts.html"><span>下一章</span><b>第 16 章　Schema 契约与 Pydantic 的角色</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

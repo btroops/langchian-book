@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 9 章　检索增强（RAG）的原理</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="layout">
+  <aside class="side"><a class="side-brand" href="index.html"><b>智能体运行时原理</b><span>从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part">第一部分　问题空间<em>框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html"><i>01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html"><i>02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html"><i>03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html"><i>04</i>LangChain 家族的全景与演进脉络</a><div class="side-part">第二部分　LangChain 的抽象原理<em>组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html"><i>05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html"><i>06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html"><i>07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html"><i>08</i>提示与解析：IO 边界的类型契约</a><a class="item on" href="ch09-rag-principles.html"><i>09</i>检索增强（RAG）的原理</a><div class="side-part">第三部分　LangGraph：从链到图<em>状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html"><i>10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html"><i>11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html"><i>12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html"><i>13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html"><i>14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html"><i>15</i>多智能体拓扑</a><div class="side-part">第四部分　依赖族与生态<em>契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html"><i>16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html"><i>17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html"><i>18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html"><i>19</i>部署与运行时形态</a><div class="side-part">第五部分　原理迁移<em>超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html"><i>20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html"><i>21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html"><i>22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html"><i>23</i>结语：框架会变，原理不会</a><div class="side-part">附录<em>速查与自检</em></div><a class="item" href="apa-glossary.html"><i>A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html"><i>B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot">共 23 章 + 2 个附录 · 原理优先<br>零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main">
+<article>
+<h1>第 9 章　检索增强（RAG）的原理</h1>
+<div class="tocbox"><b>本章小节</b>
+<ul>
+<li><a href="#_1">引子</a></li>
+<li><a href="#rag">为什么需要 RAG</a></li>
+<li><a href="#_2">检索栈四层</a></li>
+<li><a href="#_3">失效模式图谱</a></li>
+<li><a href="#_4">上下文装配策略</a></li>
+<li><a href="#rag_1">评估 RAG 的正确姿势</a></li>
+<li><a href="#_5">常见误区与排查</a></li>
+<li><a href="#_6">本章要点</a></li>
+<li><a href="#_7">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote>
+<p>RAG 是给模型外挂记忆，不是给模型换更大的脑子。它的失效点几乎全在检索，而不在生成。</p>
+</blockquote>
+<h2 id="_1">引子</h2>
+<p>一个团队上线了内部知识问答。演示时效果惊艳，回答准确、引用清楚。上线两周后，投诉集中在同一类问题上：<strong>回答很流畅，但内容不对。</strong></p>
+<p>排查之后发现，问题分三种。第一种，命中的文档确实相关，但只是"主题相关"——用户问的是某个功能在特定版本的行为，检索回的却是这个功能的一般介绍。第二种，答案需要跨两篇文档才能拼出来，而系统只检索了最相似的那几段，模型只能凭一半信息回答。第三种，检索回来的内容是对的，但被排在了提示的中间位置，模型没怎么用，反而用了它自己记忆里的旧知识。</p>
+<p>这三种问题的共同点：<strong>模型没有出错。</strong> 它在给定上下文下做出了合理的回答。出错的是"给定上下文"这件事。</p>
+<p>这就是 RAG 的核心特征：它是一个由多个可独立失败环节组成的系统，而<strong>最终的输出质量由最弱的一环决定</strong>。所以懂 RAG 的关键不是"知道要接一个向量库"，而是知道这条链路上有哪几个环节、每个环节会以什么方式失败。</p>
+<h2 id="rag">为什么需要 RAG</h2>
+<p>先把动机说清楚，因为动机决定了设计的取舍方向。</p>
+<p>有四种现实需求会把人推向 RAG，它们对应的解法侧重并不相同。</p>
+<p><strong>需求一：知识时效。</strong> 模型的训练数据有截止时间，而业务知识每天都在变。RAG 让知识更新变成"更新索引"而不是"重新训练"。</p>
+<p><strong>需求二：私有知识。</strong> 企业内部文档不可能进入模型的训练过程。RAG 让模型在不接触原始语料训练的前提下使用这些知识。</p>
+<p><strong>需求三：可溯源。</strong> 业务场景常要求回答能指向依据（哪份文档、哪一段）。RAG 天然支持引用，而纯生成不支持。</p>
+<p><strong>需求四：成本与可控性。</strong> 用检索缩小输入范围，可以让模型只处理相关信息，从而降低成本、减少幻觉。</p>
+<p>这四条里有意思的是需求三。<strong>可溯源是一个常被低估的设计驱动力</strong>：一旦系统需要给出引用，检索结果就不仅仅是"给模型的上下文"，同时还是"给用户的证据"。这个双重身份会影响检索的要求——用于引用的片段需要保持完整的语义单元，而用于提示的片段只需要包含相关信息。两者对切分粒度、数量、顺序的要求往往不同。</p>
+<h2 id="_2">检索栈四层</h2>
+<p>把检索拆成四层来看，每层都有自己的设计取舍。</p>
+<p><strong>第一层：切分。</strong> 把长文档拆成可检索的单元。这一层的核心矛盾是<strong>粒度</strong>：单元太大，一段里混杂多个主题，检索命中后引入大量噪声；单元太小，语义被切断，检索到的片段单独看没有意义。常见的缓解手段有三种：按结构切（按标题、段落，尊重文档自身的组织）、重叠切（相邻单元共享一部分内容，避免切断语义）、以及小单元检索、大单元供给（用小单元做匹配，命中后把所在的更大范围提供给模型）。</p>
+<p>这里的判断标准很实用：<strong>切分单元应该是一个"能独立回答某类问题的完整语义块"。</strong> 如果一段内容单独拿出来读不出完整意思，那它作为检索单元就是错的。</p>
+<p><strong>第二层：嵌入与索引。</strong> 把文本映射成向量，并建立可快速查找近邻的索引。这一层要理解的核心是<strong>嵌入模型的语义空间</strong>：它擅长捕捉"主题相近"，不擅长捕捉"条件精确匹配"。用户问"5000 元以上订单的退款规则"，嵌入模型可能给出所有讨论退款规则的段落，但区分不出金额门槛这一条件。这就是为什么<strong>纯向量检索在需要精确条件过滤时不可靠</strong>。</p>
+<p>因此实际系统常用混合检索：向量检索负责语义召回，关键词检索负责精确匹配（版本号、错误码、专有名词、金额条件），两者结果合并。这不是"更保险"，而是覆盖了两种本质不同的匹配需求。</p>
+<p><strong>第三层：召回。</strong> 检索出候选集。这一层的设计要点是<strong>不要过早收敛</strong>。很多系统的错误是在这里就只要前几条结果——如果召回本身有偏差，后面再精排也救不回来。合理的做法是召回一个稍大的候选集，把"精挑"交给下一层。</p>
+<p><strong>第四层：重排。</strong> 用一个更贵但更准的模型对候选集重新排序。这一层的价值来自一个基本事实：<strong>能快速计算的相似度，与"是否真正回答了问题"，不是同一件事。</strong> 重排模型通常同时看查询和候选内容，做的是相关性判断而不是相似度比较，因此能纠正"相似但不相关"的问题。</p>
+<p>四层的关系可以这样理解：切分决定"可被找到的最小单位"；嵌入与索引决定"能不能被找到"；召回决定"找出多少"；重排决定"给模型看什么"。<strong>最终进入提示的内容，是这四层决策的联合结果。</strong></p>
+<div class="dg">
+  <div class="dg-stack">
+    <div class="dg-layer"><span class="dg-tag">切分</span>语义单元粒度；小单元检索、大单元供给</div>
+    <div class="dg-layer"><span class="dg-tag">嵌入索引</span>语义空间擅长主题相近，不擅长精确条件</div>
+    <div class="dg-layer"><span class="dg-tag">召回</span>宁多勿少，把精挑交给下一层</div>
+    <div class="dg-layer"><span class="dg-tag">重排</span>用更贵的判断模型纠正"相似但不相关"</div>
+  </div>
+</div>
+
+<h2 id="_3">失效模式图谱</h2>
+<p>这一节是本章的核心。RAG 的故障有高度可预测的模式，认识它们就能快速定位问题。</p>
+<table>
+<thead>
+<tr>
+<th>失效模式</th>
+<th>症状</th>
+<th>根因</th>
+<th>处理方向</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>相似但不相关</td>
+<td>引用了主题相关但答非所问的段落</td>
+<td>嵌入模型比较的是话题而非答案</td>
+<td>加重排层；引入结构化过滤条件</td>
+</tr>
+<tr>
+<td>语义被切断</td>
+<td>命中段落单独看不懂，模型给出片面回答</td>
+<td>切分粒度过细，破坏了语义完整性</td>
+<td>调整切分策略，改用小检大供</td>
+</tr>
+<tr>
+<td>多跳问题</td>
+<td>需要跨多篇文档推理的问题基本答错</td>
+<td>单轮检索只能命中"直接相关"的内容</td>
+<td>查询改写、迭代检索、或引入图结构</td>
+</tr>
+<tr>
+<td>条件丢失</td>
+<td>涉及版本/金额/时间的精确问题答错</td>
+<td>向量检索不擅长精确匹配</td>
+<td>混合检索；先把条件抽成过滤项</td>
+</tr>
+<tr>
+<td>上下文淹没问题</td>
+<td>检索到了正确内容，模型却没用</td>
+<td>注入内容过多或位置不佳</td>
+<td>减少数量、提升相关性、调整顺序</td>
+</tr>
+<tr>
+<td>旧知识覆盖</td>
+<td>模型用自己的旧知识回答，无视检索结果</td>
+<td>检索内容与模型记忆冲突且未强调</td>
+<td>明确指示"仅依据提供的资料回答"并给出无依据时的行为</td>
+</tr>
+<tr>
+<td>时间与权限失效</td>
+<td>检索到已失效或有权限限制的内容</td>
+<td>索引缺少时效与权限维度</td>
+<td>索引时带上元数据，查询时做过滤</td>
+</tr>
+</tbody>
+</table>
+<p><strong>多跳问题值得单独展开</strong>，因为它是 RAG 能力的天花板所在。考虑这个问题："我们的退款政策和物流政策在超时未送达的情况下哪个优先？"要回答它，需要先找到退款政策中超时的条款，再找到物流政策中超时的条款，然后比较。而一次检索只能得到一个相似度排序——它可能同时命中两篇文档的片段，但不会主动去"比较"它们，更不会因为"缺了一半"而发起第二次检索。</p>
+<p>这就是为什么<strong>查询改写</strong>和<strong>迭代检索</strong>成为 RAG 的进阶方向：让检索不再是"一次动作"，而是"一个有反馈的循环"——先检索，看结果是否足够，不够则改写查询再检索。一旦你把它写成一个循环，它就已经不是链的问题，而是图的问题了。这也是第三部分要讲的内容与 RAG 的交汇点。</p>
+<h2 id="_4">上下文装配策略</h2>
+<p>检索回来的内容怎么放进提示，这一步的影响常被严重低估。同样的检索结果，装配方式不同，回答质量可以差出很多。</p>
+<p><strong>数量。</strong> 不是越多越好。相关内容的边际收益递减，而无关内容的边际损害不递减。实用做法是设一个上限，并在相关性低于阈值时宁可少给。宁可给三篇高相关的，不要给十篇中等相关的。</p>
+<p><strong>顺序。</strong> 因为模型对首尾位置的敏感度高于中间，最相关的内容应该放在靠前或靠后的位置，而不是均匀铺开。如果检索结果已经排好序，把它原样铺进提示并不一定是最优选择。</p>
+<p><strong>去重与合并。</strong> 相邻切片可能高度重复。重复内容不仅浪费预算，还会给模型一种"这件事被反复强调"的错误信号，导致它过度重视某个细节。</p>
+<p><strong>引用标注。</strong> 给每段内容一个可引用的标识，并要求模型在回答中标注依据。这个做法有两个收益：用户可以核查；模型在有标注要求时会更多地依赖给定材料而不是自己的记忆。第二个收益是意外但常见的。</p>
+<p><strong>预算分配。</strong> 上下文预算是共享的（第 2 章）。检索内容、对话历史、系统指令、工具输出都要从中分走一部分。检索内容经常是最大的一块，因此也最需要设上限。一个实用的做法是：先确定系统指令与当前用户问题占用的预算（这是不可压缩的），剩余部分再按比例分配给历史与检索内容。</p>
+<p><strong>明确的兜底行为。</strong> 必须显式定义"检索结果不足以回答时"该怎么做。多数系统的默认行为是"照常回答"，结果就是模型用自己的记忆编造。更可靠的做法是指令模型明确说明依据不足——这需要设计，而不是靠模型自发。</p>
+<h2 id="rag_1">评估 RAG 的正确姿势</h2>
+<p>一个必须讲清楚的方法论问题：<strong>检索质量与生成质量必须分开测。</strong></p>
+<p>把两者混在一起测，会得到误导性的结论。比如整体准确率是六成，你无法判断是检索没找到，还是找到了但模型没用好——而这两者的修复方向完全不同（前者改检索，后者改提示或换模型）。</p>
+<p>因此评估要分两层。</p>
+<p><strong>检索层评估</strong>回答的问题是"正确的依据有没有出现在提供给模型的内容里"。核心指标是<strong>命中率（召回）</strong>与<strong>排序质量</strong>。这一层可以自动评估：准备一批"问题 → 应命中文档"的标注数据即可。</p>
+<p><strong>生成层评估</strong>回答的问题是"在给定正确依据的前提下，回答是否忠实于依据"。这里的关键指标是<strong>忠实度</strong>——回答中的每个断言是否都能在提供的材料里找到支持。它衡量的是模型有没有"自由发挥"，而不是答案对不对。</p>
+<p>分层的实用价值在于定位。当线上效果下降时，先用少量样本判断是"检索层退化"（比如索引更新出错、切分改了）还是"生成层退化"（比如换了模型、改了提示）。这个二分能把排查范围一次砍掉一半。</p>
+<h2 id="_5">常见误区与排查</h2>
+<ul>
+<li><strong>"效果不好就换更好的嵌入模型"</strong> → 症状：换了模型收益有限。根因：瓶颈可能在切分或装配，而不是嵌入质量。修法：先分层评估定位瓶颈，再动对应环节。</li>
+<li><strong>"检索条数调大总没错"</strong> → 症状：成本上升、准确率下降、模型开始引用无关内容。根因：无关内容稀释了注意力。修法：设上限并提高重排质量，宁可少而准。</li>
+<li><strong>"向量检索就够了"</strong> → 症状：涉及编号、版本、金额、专有名词的问题准确率低。根因：语义检索不擅长精确条件匹配。修法：引入混合检索，把可结构化的条件抽成过滤项。</li>
+<li><strong>"多跳问题靠换更强的模型解决"</strong> → 症状：换模型后提升有限。根因：单轮检索在结构上无法获得第二次检索的机会。修法：引入查询改写与迭代检索。</li>
+<li><strong>"没有相关资料时，模型会说不知道"</strong> → 症状：无依据时仍然给出自信回答。根因：兜底行为没有被显式设计。修法：在指令中明确无依据时的输出约定，并配合引用标注。</li>
+<li><strong>"整体准确率达标就上线"</strong> → 症状：上线后无法解释波动来源。根因：缺少分层指标。修法：建立检索层与生成层各自的基线。</li>
+</ul>
+<h2 id="_6">本章要点</h2>
+<ul>
+<li>RAG 是由多个可独立失败环节组成的系统，最终质量由最弱环节决定；懂 RAG 的关键是知道每个环节怎么失败。</li>
+<li>四种动机（时效、私有、溯源、成本）中，可溯源要求会反向影响切分与装配设计。</li>
+<li>检索栈四层各有取舍：切分决定粒度、嵌入决定能否被找到、召回宁多勿少、重排纠正"相似但不相关"。</li>
+<li>嵌入模型的语义空间擅长"话题相近"，不擅长"条件精确匹配"，因此混合检索是结构上的需要而非保险。</li>
+<li>多跳问题是单轮检索的天花板；一旦引入迭代检索，问题就已经从链变成了图。</li>
+<li>上下文装配的五个变量（数量、顺序、去重、引用、预算）对结果的影响常常大于换模型。</li>
+<li>评估必须分层：检索层看命中与排序，生成层看忠实度。混测会得到无法行动的数字。</li>
+</ul>
+<h2 id="_7">迁移视角：如果不用这个框架</h2>
+<p>RAG 的骨架其实就是一套经典的<strong>信息检索系统</strong>：切分对应索引单元设计，嵌入对应特征表示，召回对应候选生成，重排对应精排。这四段在搜索引擎里已经演化了三十多年，LLM 只是改变了最后一环——从"返回结果列表"变成了"用结果生成答案"。</p>
+<p>所以有几条来自传统检索的经验可以直接借用。<strong>第一，评估驱动的迭代。</strong> 传统检索系统的建设方式是建立标注集、测指标、调参数；RAG 同样应该如此，而不是靠"试几个问题看看效果"。<strong>第二，分层归因。</strong> 候选生成和精排分开评估，这个纪律能显著缩短排查时间。<strong>第三，混合策略的常态性。</strong> 纯语义或纯关键词都不是好方案，两者的组合才是默认选项，这一点在传统检索里早就是共识。</p>
+<p>另有一条是 LLM 时代的新增项：<strong>忠实度是一个新的独立维度。</strong> 传统检索不关心"生成器是否忠于依据"，因为没有生成器。现在它成了一个必须单独度量和优化的指标，因为模型天然倾向于给出流畅而完整的答案，即使依据并不充分。</p>
+<p>最后，把 RAG 看成"外挂记忆"这个比喻值得再往深处推一步：既然是记忆，那么它就应该像记忆一样被管理——有过期、有优先级、有冲突消解、有写入策略。第 21 章会把这条线索接到上下文工程与记忆分层的讨论上。</p>
+<div class="pager"><a class="prev" href="ch08-prompt-and-parsing.html"><span>上一章</span><b>第 8 章　提示与解析：IO 边界的类型契约</b></a><a class="next" href="ch10-why-graphs.html"><span>下一章</span><b>第 10 章　为什么链不够：Agent 循环的本质</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

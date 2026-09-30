@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 6 章　LCEL：声明式编排的原理</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="layout">
+  <aside class="side"><a class="side-brand" href="index.html"><b>智能体运行时原理</b><span>从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part">第一部分　问题空间<em>框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html"><i>01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html"><i>02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html"><i>03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html"><i>04</i>LangChain 家族的全景与演进脉络</a><div class="side-part">第二部分　LangChain 的抽象原理<em>组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html"><i>05</i>Runnable 协议：统一执行语义</a><a class="item on" href="ch06-lcel-principles.html"><i>06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html"><i>07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html"><i>08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html"><i>09</i>检索增强（RAG）的原理</a><div class="side-part">第三部分　LangGraph：从链到图<em>状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html"><i>10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html"><i>11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html"><i>12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html"><i>13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html"><i>14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html"><i>15</i>多智能体拓扑</a><div class="side-part">第四部分　依赖族与生态<em>契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html"><i>16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html"><i>17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html"><i>18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html"><i>19</i>部署与运行时形态</a><div class="side-part">第五部分　原理迁移<em>超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html"><i>20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html"><i>21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html"><i>22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html"><i>23</i>结语：框架会变，原理不会</a><div class="side-part">附录<em>速查与自检</em></div><a class="item" href="apa-glossary.html"><i>A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html"><i>B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot">共 23 章 + 2 个附录 · 原理优先<br>零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main">
+<article>
+<h1>第 6 章　LCEL：声明式编排的原理</h1>
+<div class="tocbox"><b>本章小节</b>
+<ul>
+<li><a href="#_1">引子</a></li>
+<li><a href="#_2">声明式与命令式的分界</a></li>
+<li><a href="#_3">组合子全集</a></li>
+<li><a href="#_4">流式传播：组合之后为什么还能端到端流式</a></li>
+<li><a href="#_5">失败语义的组合规则</a></li>
+<li><a href="#lcel">表达力边界：LCEL 表达不了什么</a></li>
+<li><a href="#_6">常见误区与排查</a></li>
+<li><a href="#_7">本章要点</a></li>
+<li><a href="#_8">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote>
+<p>管道符背后不是语法糖，是一套组合子代数。看懂了这套代数，你就能预判"这个链路能不能流式、失败时会怎么走"。</p>
+</blockquote>
+<h2 id="_1">引子</h2>
+<p>一段声明式编排的写法看起来是这样的：把提示模板、模型、解析器用管道符串起来，一行写完。</p>
+<p>初学者通常有两种反应。一种是"挺好看"，然后照抄；另一种是"这不就是包装了一层吗，直接顺序调用不也一样"。</p>
+<p>第二种反应在简单链路上几乎站得住脚——三个步骤顺序执行，确实和手写没区别。但它会在两个地方失效。</p>
+<p>第一，当你需要流式输出时。手写的顺序调用里，第一个步骤必须完整执行完才能交给第二个步骤；而流式要求"第一个步骤还在产出时，第二个步骤就开始处理"。这个差别不是写法问题，是执行模型问题。</p>
+<p>第二，当你需要容错时。手写的顺序调用里，"模型超时了怎么办"这件事会在每个调用点各写一遍，写法还很可能不一致；而声明式编排把它变成链路的一个属性，一处声明全局生效。</p>
+<p>这两个差别指向同一个原理：<strong>声明式编排描述的是"组件之间如何关联"，而关联本身携带语义——包括数据流动方式和失败传播方式。</strong> 命令式写法描述的是"我按顺序做了这些事"，关联信息在这个过程中丢失了。</p>
+<p>这一章拆开这套代数：先看有哪些组合子，再重点讲流式传播为什么能成立，最后讲它的边界在哪里。</p>
+<h2 id="_2">声明式与命令式的分界</h2>
+<p>先把这个区分说清楚，因为它经常被误解成风格偏好。</p>
+<p><strong>命令式</strong>回答的是"怎么一步步做"：先取数据，再调模型，再解析，如果出错就重试，把结果拼起来返回。<strong>声明式</strong>回答的是"这些东西怎么关联"：解析器接在模型之后，模型接在模板之后，整条链路在失败时可以退回到备用模型。</p>
+<p>关键差别在于<strong>关联信息是否被保留下来</strong>。命令式写法执行完之后，系统里只有一段已经跑过的代码，没有任何地方记录"A 的输出是 B 的输入"。声明式写法在执行前就得到了一张结构图，这张图可以被执行引擎用来做很多事：它知道该在哪里插入流式转发、知道哪个组件的失败可以整体回退、知道每个环节的耗时该记在哪个父节点下。</p>
+<div class="dg">
+  <div class="dg-vs">
+    <div class="dg-col-head">命令式</div>
+    <div class="dg-col-head dg-alt-head">声明式</div>
+    <div class="dg-cell">描述步骤顺序，执行即丢失结构</div>
+    <div class="dg-cell dg-alt">描述组件关联，结构先于执行存在</div>
+    <div class="dg-cell">流式、重试、追踪各自实现一遍</div>
+    <div class="dg-cell dg-alt">上述能力成为结构的属性，一处声明</div>
+    <div class="dg-cell">改动需要重排代码</div>
+    <div class="dg-cell dg-alt">改动是替换结构中的一处</div>
+  </div>
+</div>
+
+<p>所以"声明式只是写法的甜头"这个判断是错的。它真正的价值是<strong>把结构变成可被引擎消费的一等对象</strong>。这也是为什么第 10 章要转向图：图是这个思路推到极致的形态。</p>
+<h2 id="_3">组合子全集</h2>
+<p>组合子（combinator）是构造结构的基本元件。这套代数大致有六类。</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>作用</th>
+<th>语义要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>顺序</td>
+<td>前一个的输出作为后一个的输入</td>
+<td>唯一的"主线"连接方式；类型必须能衔接</td>
+</tr>
+<tr>
+<td>并行</td>
+<td>同一输入分发给多个组件，结果汇总</td>
+<td>汇总形状决定下游能看到什么；各分支互相不可见</td>
+</tr>
+<tr>
+<td>分支</td>
+<td>按条件选择走哪条路</td>
+<td>条件是运行期求值的函数，不是在声明期确定的</td>
+</tr>
+<tr>
+<td>透传</td>
+<td>让输入原样流过，或把它并入结果</td>
+<td>解决"下游需要上游数据"的问题</td>
+</tr>
+<tr>
+<td>动态求值</td>
+<td>把任意函数接入链路</td>
+<td>逃生舱口；一旦使用，该段的可组合性下降</td>
+</tr>
+<tr>
+<td>装饰</td>
+<td>给组件附加回退、重试、配置</td>
+<td>不改变数据形状，只改变执行语义</td>
+</tr>
+</tbody>
+</table>
+<p>这里有三点值得展开。</p>
+<p><strong>顺序组合的类型衔接是强制约束。</strong> 上游产出什么，下游必须能接受什么——这个约束在声明时就被检查，而不是等到运行才发现。这是声明式写法最实际的收益：<strong>类型错误从运行时提前到了构建时</strong>。</p>
+<p><strong>并行组合的结果形状是设计决策。</strong> 并行执行后需要把多个结果合成一个，合成方式决定了后续组件能拿到什么信息。一个常见的失误是并行分支之间互相需要对方的数据，但因为它们并发执行、彼此不可见，只能把结果汇总后再做一次合并。<strong>并行组合本质上是用"降低分支间耦合"换"缩短总耗时"</strong>，如果分支之间确实有依赖，就不该并行。</p>
+<p><strong>透传组合解决的是一个具体的痛点。</strong> 链路的早期步骤产生了一些数据（用户原始问题、检索到的原文），但中间步骤（比如模型调用）只把一部分信息往下传。下游需要这些早期数据时，只能靠透传机制把它"带过去"。这个机制的存在说明一件事：<strong>数据流的主线是"值传递"，而不是"环境传递"</strong>——这是有意的设计，因为它让数据依赖显式可见。</p>
+<p><strong>动态求值组合是一个需要克制使用的逃生舱口。</strong> 它的作用是让任意逻辑接入链路，代价是这段逻辑无法被声明式地组合（引擎不知道它内部的结构，也就无法为它做流式转发优化或失败回退）。合理的用法是把外部依赖（比如一次数据库查询）包成一个原子步骤；不合理的用法是把整段业务流程塞进去——那样声明式带来的收益就基本消失了。</p>
+<div class="dg">
+  <div class="dg-flow">
+    <div class="dg-box">输入</div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box">并行分支 A</div>
+    <div class="dg-arw">⤵</div>
+    <div class="dg-box dg-alt">汇总</div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box">顺序执行</div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box dg-hl">回退装饰</div>
+  </div>
+</div>
+
+<h2 id="_4">流式传播：组合之后为什么还能端到端流式</h2>
+<p>这是本章最重要的一节。问题是这样：模型可以流式生成，用户想边生成边看到文本。但如果链路中间插了一个"解析器"，它需要完整的结果才能工作——那么整个链路是不是就只能退化成"等模型全部生成完，再交给解析器"？</p>
+<p>答案是：<strong>不需要退化，但需要每个参与者支持"增量输入、增量输出"。</strong></p>
+<p>机制的核心是一种双向约定。每个组件除了"接受完整输入、返回完整输出"之外，还要能提供另一种执行形态：<strong>接受一个流（增量到达的输入），返回一个流（增量产出的输出）</strong>。一旦所有组件都能这么做，整条链路就能像水管一样被"逐段转发"：上游出来多少，下游马上处理多少。</p>
+<p>不同组件在这个约定下的角色不同，这正好解释了为什么有些链路能流式、有些不能。</p>
+<table>
+<thead>
+<tr>
+<th>组件类型</th>
+<th>对流式输入的处理</th>
+<th>对结果的影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>直接透传型</td>
+<td>来一片转一片</td>
+<td>不阻塞流式</td>
+</tr>
+<tr>
+<td>增量累积型</td>
+<td>累积分片，边累积边产出中间结果</td>
+<td>不阻塞流式，但产出格式可能变化</td>
+</tr>
+<tr>
+<td>需要完整结构型</td>
+<td>必须等待全部输入</td>
+<td><strong>阻塞流式</strong>，是链路里的瓶颈</td>
+</tr>
+<tr>
+<td>聚合型</td>
+<td>收集全部后一次性输出</td>
+<td>终端环节，天然不接受流式</td>
+</tr>
+</tbody>
+</table>
+<p><strong>"需要完整结构型"是最常见的流式中断原因。</strong> 输出解析、结构化校验、格式转换都属于这一类：它们必须看到完整内容才能判断合法性。这就是为什么一个"模板 → 模型 → 结构化解析"的链路很难做到真正的流式——解析器那一环必须等到最后。</p>
+<p>应对策略有三种，各有取舍。</p>
+<p><strong>策略一：把解析移出流式链路。</strong> 流式通道只负责把文本呈现给用户，解析在校验通道单独进行。代价是要处理两个通道的不一致（用户已经看到了文本，但校验可能失败）。</p>
+<p><strong>策略二：用能在中间态工作的解析方式。</strong> 如果格式允许，可以设计成"每片都是独立可用的增量"，比如逐行输出的结构化文本。代价是格式约束更强，模型需要配合。</p>
+<p><strong>策略三：流式只用于人机交互界面，业务逻辑走非流式。</strong> 这是最省事的做法，相当于承认"给人看的"和"给程序用的"是两条不同的通道。多数生产系统最终选了这一条。</p>
+<p>理解这三种策略的差别，就不难解释一个常见疑问：为什么别人的链路能流式，我的不能？答案通常不在模型，而在<strong>链路上有没有一个必须等完整输入才能工作的组件</strong>。</p>
+<h2 id="_5">失败语义的组合规则</h2>
+<p>失败在链路上会沿着结构传播，而传播方式由组合方式决定。这里有四条规则需要记住。</p>
+<p><strong>规则一：回退是其替代者的整体替换。</strong> 回退机制的意思是"当这段执行失败时，改用另一段执行"。它的语义是<strong>整段替换</strong>，不是"从失败的那一步接着走"。因此回退链条里的替代方案必须能接受同样的输入、产出同样的输出——否则回退成功但结果类型不符，问题会在下游爆炸。</p>
+<p><strong>规则二：重试只对幂等或可安全重复的执行有效。</strong> 重试是执行语义层面的最常用工具，但它在有副作用的步骤上极其危险。这里的判断标准很硬：<strong>这一步重复执行一次，会不会造成额外的外部影响？</strong> 会，就不能裸重试，必须先做去重或幂等设计。第 13 章会专门讲这个问题。</p>
+<p><strong>规则三：装饰的叠加顺序会改变行为。</strong> 对同一个组件同时施加回退和重试，会产生两种截然不同的语义：先重试后回退（把这一段的失败耗尽重试次数后交给替代方案），和先回退后重试（失败立即切换替代方案，再对替代方案重试）。这两种在故障时的表现差异很大，但写出来只差一个顺序。<strong>这是最容易在代码评审中被忽略的一类问题。</strong></p>
+<p><strong>规则四：并行的失败处理是设计决策。</strong> 并行分支里一个失败，是整体失败还是忽略该分支继续？这个决定不能用默认值蒙过去，因为它直接影响结果的可信度。经验判断是：如果分支的产出是"可选补充信息"，可以允许忽略；如果分支的产出是必要条件，就必须整体失败——否则你会得到一个"看起来成功但缺了关键依据"的结果，这正是第 2 章说的静默错误。</p>
+<div class="dg">
+  <div class="dg-col">
+    <div class="dg-box">执行失败</div>
+    <div class="dg-arw">↓ 判断是否需要重试</div>
+    <div class="dg-box dg-alt">重试（仅幂等或已去重）</div>
+    <div class="dg-arw">↓ 重试耗尽</div>
+    <div class="dg-box">回退到替代实现</div>
+    <div class="dg-arw">↓ 替代也失败</div>
+    <div class="dg-box dg-hl">向上抛出，由更外层决定</div>
+  </div>
+</div>
+
+<p>一个实用的原则：<strong>每一层的失败处理都应该明确回答"我处理不了时交给谁"。</strong> 如果每一层都只管覆盖，异常会被一路吞掉，最后表现为一个空结果或者默认值——这是最难排查的一类故障。</p>
+<h2 id="lcel">表达力边界：LCEL 表达不了什么</h2>
+<p>这一节是本章的落点，也是第三部分的入口。</p>
+<p><strong>边界一：无环。</strong> 组合子的结构在声明时确定，因此没有"回到之前的某个状态再走一遍"的能力。用递归模拟循环在技术上有办法（一个组件内部调用自己），但代价很大：状态无法被统一管理、执行无法被外部暂停、轨迹会变成嵌套的调用栈而不是平坦的步骤序列。</p>
+<p><strong>边界二：没有跨步骤的共享状态。</strong> 链路的连接方式是值传递——上游产出流向下游。当多个步骤需要读写同一份共享数据（比如一个"任务计划"对象，多个步骤都会修改它），值传递就表达不了，只能靠透传机制把它一路携带，或者把它塞进动态求值组件里变成事实上的全局变量。</p>
+<p><strong>边界三：没有暂停点。</strong> 声明式结构描述的是"从输入到输出"的完整推导，它没有"停在中间等人"这个概念。而人在回路的审批恰恰要求执行能停下来、被保存、在外部条件满足后从原处继续。</p>
+<p><strong>边界四：不可恢复。</strong> 链路一旦开始执行，中间过程就在内存里，没有持久化边界。进程重启意味着全部重来。</p>
+<p>这四条边界不是缺陷，而是这套抽象的定义域。它擅长的是"给定输入、推导出输出"的<strong>转换问题</strong>；它不擅长的是"在不确定的外部环境中逐步推进一个任务"的<strong>过程问题</strong>。第 10 章会说明，后一类问题需要一个新的执行模型——这才是 LangGraph 出现的理由，而不是"LCEL 不够好"。</p>
+<h2 id="_6">常见误区与排查</h2>
+<ul>
+<li><strong>"管道符只是顺序执行的语法糖"</strong> → 症状：链路出问题时不知道从哪看，也无法解释为什么某些环节能流式。根因：忽略了结构被保留下来这一事实。修法：把链路当成"可被引擎消费的结构"来思考。</li>
+<li><strong>"并行分支越多越快"</strong> → 症状：总耗时没降，错误率上升，日志混乱。根因：分支之间真实存在依赖，被强行并行；或者并发压垮了外部限流。修法：只在分支真正独立时并行，并显式配置并发上限。</li>
+<li><strong>"链路上接了结构化解析，但期待流式输出"</strong> → 症状：用户界面上的输出总是延迟很久才出现。根因：链路上有需要完整输入的组件，阻塞了流式转发。修法：按本节三种策略之一处理，通常是拆分交互通道与校验通道。</li>
+<li><strong>"重试是万能的稳定性手段"</strong> → 症状：偶发的重复下单、重复通知。根因：对含副作用的执行裸重试。修法：先做幂等键与去重，再谈重试。</li>
+<li><strong>"有回退就安全了"</strong> → 症状：回退成功但下游报错。根因：替代方案的输入输出契约与主路径不一致。修法：把替代方案当作"同一契约的另一个实现"来要求。</li>
+<li><strong>"链路越长功能越强"</strong> → 症状：质量不稳定、成本上升、排查困难。根因：忽略了第 2 章的失败率乘法效应。修法：定期审视链路，合并可合并的步骤。</li>
+</ul>
+<h2 id="_7">本章要点</h2>
+<ul>
+<li>声明式的价值不在写法简洁，而在<strong>结构被保留下来</strong>，从而成为执行引擎可消费的一等对象。</li>
+<li>六类组合子：顺序、并行、分支、透传、动态求值、装饰。类型衔接在声明期检查，是实际收益。</li>
+<li>流式传播的机制是"每个组件都能接受流、返回流"；链路能否流式，取决于有没有<strong>必须等完整输入的组件</strong>。</li>
+<li>流式中断的三条对策：解析移出流式通道、设计增量友好的格式、拆分为人机通道与业务通道。</li>
+<li>失败沿结构传播，四条规则：回退是整段替换、重试只适用于幂等步骤、装饰叠加顺序改变语义、并行失败策略必须显式决定。</li>
+<li>每一层失败处理都要回答"我处理不了时交给谁"，否则异常会被静默吞掉。</li>
+<li>表达力边界四条：无环、无跨步骤共享状态、无暂停点、不可恢复。这四条边界正是下一部分要解决的问题。</li>
+</ul>
+<h2 id="_8">迁移视角：如果不用这个框架</h2>
+<p>组合子代数不是这套框架发明的概念。函数式编程里的组合子、Unix 管道、构建系统的任务依赖图、数据流编程框架，用的是同一套思路：<strong>用少量正交的组合规则生成大量结构，而不是枚举结构。</strong></p>
+<p>如果你要为某个领域设计组合机制，这一章有几条现成的经验可以直接用。</p>
+<p><strong>第一条：区分"主线数据流"和"旁路数据"。</strong> 主线用值传递，保证依赖显式；旁路数据用透传或上下文携带，避免主线被污染。这个二分能让结构长期保持可读。</p>
+<p><strong>第二条：任何"必须等完整输入"的环节都会破坏增量处理。</strong> 设计时把这些环节标出来，单独考虑它们的位置。这个规律不只适用于流式场景——在分页、增量同步、实时计算里都一样。</p>
+<p><strong>第三条：装饰必须有明确的叠加顺序语义。</strong> 回退、重试、超时、缓存这些装饰一旦组合，顺序就决定行为。把它们设计成可预测的、有文档的顺序规则，是避免"看起来一样但行为不同"的关键。</p>
+<p><strong>第四条，也是最重要的：知道你的组合机制的边界在哪，并且诚实地承认它。</strong> 一套无环的值传递组合机制，不应该被硬塞进有状态循环的场景。边界不是缺陷，硬撑才是。识别出"这个问题已经超出当前抽象的表达域"并主动升级模型，是架构演进中最关键的一步——下一章到第 15 章，讲的就是升级之后的那套模型。</p>
+<div class="pager"><a class="prev" href="ch05-runnable-protocol.html"><span>上一章</span><b>第 5 章　Runnable 协议：统一执行语义</b></a><a class="next" href="ch07-model-adaptation.html"><span>下一章</span><b>第 7 章　模型与消息：LLM 适配层的原理</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

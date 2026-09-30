@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 11 章　状态与通道：图的数据模型</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="layout">
+  <aside class="side"><a class="side-brand" href="index.html"><b>智能体运行时原理</b><span>从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part">第一部分　问题空间<em>框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html"><i>01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html"><i>02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html"><i>03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html"><i>04</i>LangChain 家族的全景与演进脉络</a><div class="side-part">第二部分　LangChain 的抽象原理<em>组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html"><i>05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html"><i>06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html"><i>07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html"><i>08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html"><i>09</i>检索增强（RAG）的原理</a><div class="side-part">第三部分　LangGraph：从链到图<em>状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html"><i>10</i>为什么链不够：Agent 循环的本质</a><a class="item on" href="ch11-state-and-channels.html"><i>11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html"><i>12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html"><i>13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html"><i>14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html"><i>15</i>多智能体拓扑</a><div class="side-part">第四部分　依赖族与生态<em>契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html"><i>16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html"><i>17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html"><i>18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html"><i>19</i>部署与运行时形态</a><div class="side-part">第五部分　原理迁移<em>超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html"><i>20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html"><i>21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html"><i>22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html"><i>23</i>结语：框架会变，原理不会</a><div class="side-part">附录<em>速查与自检</em></div><a class="item" href="apa-glossary.html"><i>A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html"><i>B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot">共 23 章 + 2 个附录 · 原理优先<br>零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main">
+<article>
+<h1>第 11 章　状态与通道：图的数据模型</h1>
+<div class="tocbox"><b>本章小节</b>
+<ul>
+<li><a href="#_1">引子</a></li>
+<li><a href="#_2">共享状态与消息传递</a></li>
+<li><a href="#_3">读写规则：读全量、写增量</a></li>
+<li><a href="#_4">归约器语义</a></li>
+<li><a href="#_5">通道与超步</a></li>
+<li><a href="#_6">状态设计三原则</a></li>
+<li><a href="#_7">反模式</a></li>
+<li><a href="#_8">常见误区与排查</a></li>
+<li><a href="#_9">本章要点</a></li>
+<li><a href="#_10">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote>
+<p>状态是图中唯一的真相来源。归约器决定并发写同一字段时会发生什么——这一条没想清楚，数据就会悄悄丢。</p>
+</blockquote>
+<h2 id="_1">引子</h2>
+<p>一个团队把审批流程搬到了图上。测试环境下一切正常，上线后开始出现一类奇怪的投诉：<strong>有些审批意见"消失"了。</strong></p>
+<p>排查过程是这样的：流程里有两个节点会在同一轮并行执行——一个负责合规检查，一个负责风险评估。两者都会往"检查记录"这个列表里追加自己的结果。日志显示两个节点都执行了，都返回了内容，但最终状态里只有一条记录。</p>
+<p>问题出在合并方式上。这两个节点并发执行，各自读取了同一份状态（当时列表里有零条记录），各自在自己的副本上追加了一条，然后两份结果被合并。如果合并规则是"用后写的覆盖先写的"，那么先写的那条就消失了——<strong>不是被删掉了，而是从未在最终结果里出现过。</strong></p>
+<p>这个 bug 的性质值得记住：<strong>两个节点都正确执行了，合并规则也是"正确实现"的，但结果是错的。</strong> 错误来自"并发更新同一字段"这个组合，而不是来自任何单个环节。要避免它，必须在设计状态时就明确每一类更新应该怎样合并。</p>
+<p>这就是本章的主题。</p>
+<h2 id="_2">共享状态与消息传递</h2>
+<p>多节点协作有两种基本范式，先对比清楚，再谈图选了哪一种。</p>
+<p><strong>消息传递</strong>是每个节点把结果发给下游节点，节点之间不共享存储。它的优点是耦合度低——每个节点只关心自己收到的消息，不需要知道全局状态长什么样。缺点是全局视图难以维护：当你要判断"这个任务整体处在什么阶段"时，必须把散落在各处的消息重新拼起来。</p>
+<p><strong>共享状态</strong>是所有节点读写同一份状态。它的优点是全局视图天然存在——任何时候状态就是系统的完整描述，暂停、恢复、观测都只需要处理这一个对象。缺点是耦合度高：节点之间通过状态字段产生了隐式依赖，一个节点改了字段含义，别的节点可能受影响。</p>
+<p>图选择了共享状态，理由是它要满足的三个能力（可持久化、可暂停、可观测）都要求"系统状态是一个可以完整取出的对象"。如果状态分散在消息通道里，快照就要保存全部在途消息，恢复时要重建投递顺序——复杂度会高得多。</p>
+<p>但共享状态有一个必须解决的问题：<strong>并发写怎么办？</strong> 两个节点同时更新同一个字段，如果各自读全量、改一处、写全量，那么后写的会覆盖先写的。这就是引子里那个 bug。解决办法是改变节点写状态的方式：<strong>节点不写全量，只写增量；合并由引擎按规则完成。</strong></p>
+<h2 id="_3">读写规则：读全量、写增量</h2>
+<p>这条规则是理解状态模型的钥匙。</p>
+<p><strong>读：节点拿到的是当前状态的完整视图。</strong> 这样节点不需要关心"上一步是谁"，也不需要向别人索取数据。这降低了节点间的耦合——节点是"从状态到状态变化"的纯函数。</p>
+<p><strong>写：节点返回的是"要做的修改"，不是"修改后的完整状态"。</strong> 返回的可以是某几个字段的新值，或者某个字段的"待追加项"。引擎负责把这些增量合并进全局状态。</p>
+<p>为什么必须这样？因为增量是<strong>可合并</strong>的，全量是不可合并的。如果两个节点都返回全量，合并规则只能是"谁后写谁赢"，信息必然丢失。如果两个节点都返回增量（"我要往列表里加一条"），合并规则就可以是"两条都加进去"，信息被保留。</p>
+<div class="dg">
+  <div class="dg-vs">
+    <div class="dg-col-head">错误写法：返回全量</div>
+    <div class="dg-col-head dg-alt-head">正确写法：返回增量</div>
+    <div class="dg-cell">节点 A 读到列表为空，返回"列表 = [A]"</div>
+    <div class="dg-cell dg-alt">节点 A 返回"追加 A"</div>
+    <div class="dg-cell">节点 B 读到列表为空，返回"列表 = [B]"</div>
+    <div class="dg-cell dg-alt">节点 B 返回"追加 B"</div>
+    <div class="dg-cell">合并结果：[B] —— A 丢失</div>
+    <div class="dg-cell dg-alt">合并结果：[A, B] —— 无丢失</div>
+  </div>
+</div>
+
+<p>这条规则带来两个直接推论。<strong>推论一：节点的返回值应该是"部分"的。</strong> 只返回自己真正修改的字段，未修改的字段不出现在返回值里——否则就等于用当前读到的值覆盖了别人可能的更新。<strong>推论二：状态字段的设计要按"更新模式"分组。</strong> 同一种更新模式（都是追加、都是覆盖、都是求和）的字段可以一起处理；不同更新模式的字段必须有各自的合并规则，不能笼统对待。</p>
+<h2 id="_4">归约器语义</h2>
+<p>归约器（Reducer）就是"同一字段的多份增量如何合并"的规则。它是显式声明的，因为引擎无法从数据类型猜出意图——同样是列表，有时要追加，有时要替换，有时要去重后追加。</p>
+<p>常见的归约语义有五类，每一类都有它适用的场景和误用的后果。</p>
+<table>
+<thead>
+<tr>
+<th>归约语义</th>
+<th>行为</th>
+<th>适用</th>
+<th>误用的后果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>覆盖</td>
+<td>新值替换旧值</td>
+<td>单值字段的最新状态（当前阶段、当前得分）</td>
+<td>用在多来源写入上会丢数据</td>
+</tr>
+<tr>
+<td>追加</td>
+<td>把新项并入序列</td>
+<td>消息历史、执行日志、检查记录</td>
+<td>用在需要去重的场景会让序列无限膨胀</td>
+</tr>
+<tr>
+<td>求和/计数</td>
+<td>数值累加</td>
+<td>步数、token 用量、成本统计</td>
+<td>用在并发下会产生重复累加（若增量本身含全量含义）</td>
+</tr>
+<tr>
+<td>去重合并</td>
+<td>合并后去重</td>
+<td>集合语义的字段（已访问节点、已触发告警）</td>
+<td>去重键设计不当会误删有价值的信息</td>
+</tr>
+<tr>
+<td>自定义合并</td>
+<td>由函数决定</td>
+<td>结构化对象的部分更新、复杂语义</td>
+<td>逻辑隐藏太深，难以排查</td>
+</tr>
+</tbody>
+</table>
+<p><strong>"用错归约器"的三种典型症状</strong>，可以当作排查线索：</p>
+<p><strong>症状一：数据莫名变少。</strong> 通常是"覆盖"被用在了多来源写入的字段上。这是引子里那个 bug。
+<strong>症状二：数据无限增长。</strong> 通常是"追加"被用在了会重复产生的字段上（比如每轮循环都追加一次系统指令）。最终会撞上上下文或存储上限。
+<strong>症状三：数值偏高。</strong> 通常是"求和"被用在了"增量其实包含全量"的场景。比如节点返回"当前已使用 token 数"（全量语义）却被当作增量累加，数值会翻倍增长。</p>
+<p>一个实用的设计建议：<strong>把归约器当成状态字段的一部分来声明，而不是当成执行时的选项。</strong> 字段一旦定义，它的合并语义就应该固定下来；如果某个字段因为场景不同需要不同合并方式，那更可能是应该拆成两个字段。</p>
+<h2 id="_5">通道与超步</h2>
+<p>"通道"（Channel）这个概念描述的是状态字段的运行时表现形态。理解它有助于解释一个常见困惑：<strong>为什么有些字段看起来"天然支持并发"，有些不行？</strong></p>
+<p>一个通道大致要维护三件事：当前值、这一轮收到的更新、以及合并规则。引擎在每一轮开始时清空"待合并"的位置，节点执行时把增量放进去，一轮结束时统一合并进当前值。</p>
+<p><strong>超步（super-step）</strong>则是执行的节拍：所有被激活的节点并行执行，全部完成后统一合并状态，然后才进入下一轮。这个"统一合并"的动作就是同步边界。</p>
+<p>超步模型解释了几个在实践里会观察到的现象。</p>
+<p><strong>现象一：同一轮里，节点看不到彼此的更新。</strong> 因为合并在轮末发生。如果你的逻辑依赖 A 的写能被同轮的 B 读到，那么必须把 B 放到下一轮——也就是让 A 和 B 之间有一条边。</p>
+<p><strong>现象二：边的作用不只是"下一个执行谁"，还隐含了"产生新的超步"。</strong> 一条边意味着"等这一轮结束后再走"。</p>
+<p><strong>现象三：并行度是由"同一轮被激活的节点数"决定的，不是由代码里的写法决定的。</strong> 想要并行，条件是这些节点在同一轮被激活且没有互相依赖。</p>
+<p><strong>现象四：一轮的耗时由最慢的节点决定。</strong> 同步边界意味着必须等最慢的那个。所以把一个特别慢的节点和几个快节点并行，整体速度取决于慢节点——它还会把快节点的状态"晾"在那里等着。这是一个重要的优化判断依据：<strong>并行的收益来自"节点耗时相当"，差异过大时并行带来的收益有限。</strong></p>
+<div class="dg">
+  <div class="dg-col">
+    <div class="dg-box">超步开始：清空待合并区，激活本轮节点</div>
+    <div class="dg-arw">↓</div>
+    <div class="dg-box dg-alt">节点并行执行，各自产出增量（互不可见）</div>
+    <div class="dg-arw">↓</div>
+    <div class="dg-box">同步边界：全部完成后统一按归约器合并</div>
+    <div class="dg-arw">↓ 条件边求值，决定下一轮激活谁</div>
+    <div class="dg-box dg-hl">下一超步</div>
+  </div>
+</div>
+
+<h2 id="_6">状态设计三原则</h2>
+<p>这三条原则可以直接当作评审清单。</p>
+<p><strong>原则一：可序列化。</strong> 状态必须能被完整地写出与读回。因为持久化就是序列化，如果状态里含有不可序列化的东西（连接句柄、文件描述符、闭包、绑定了外部资源的对象），那么检查点要么失败，要么静默地保存了一个残缺的对象，恢复后行为异常。</p>
+<p>这条原则的实践含义很具体：<strong>状态里只放数据，不放资源。</strong> 需要资源时，在节点内部按需获取，用完释放。资源的位置（比如某个服务的地址、某个文件的路径）可以放在状态里，资源本身不行。</p>
+<p><strong>原则二：可合并。</strong> 每个字段的合并语义必须明确，且与写入模式匹配。检查方式：对每一个字段问两个问题——<strong>会有多个节点在同一个超步里写它吗？</strong> 会的话，它的归约器是什么？<strong>会写多次（循环里反复写）吗？</strong> 会的话，累积会不会失控？</p>
+<p><strong>原则三：可解释。</strong> 状态是系统在任一时刻的完整描述。一个好的状态设计，应该让人只看状态就能说出"这个任务做到哪了、接下来该做什么、为什么在这里"。如果做不到，说明状态里缺了关键信息（比如缺少"当前阶段的意图"或"已尝试过什么"），或者混入了无关信息（比如中间计算的临时变量）。</p>
+<p>一个检验方法是：<strong>把状态从检查点里取出来，交给一个不了解这套系统的人看，他能否说出任务进展？</strong> 如果不行，这个状态在未来排查问题时也帮不上你——而排查问题恰恰是状态存在的第二大理由。</p>
+<h2 id="_7">反模式</h2>
+<p><strong>反模式一：把状态当全局变量用。</strong> 表现：任何需要跨步骤传递的东西都往状态里塞，状态字段数从五个涨到五十个，其中一半是"临时变量"。后果：状态含义模糊，没有人敢删字段；每次快照都很大；恢复时不知道哪些字段是有效的。修法是区分"状态"与"局部变量"——只在节点间需要共享、或者需要跨检查点存活的东西才进状态。</p>
+<p><strong>反模式二：状态膨胀。</strong> 表现：把完整的工具返回结果、完整的文档内容、所有历史消息都放进状态。后果：每轮都要序列化全量状态，存储与传输成本随轮数线性上升；上下文装配时被迫在大对象里做筛选。修法是状态里只放"标识与摘要"，原始内容放在外部存储，需要时按标识取。<strong>记住：状态是索引，不是仓库。</strong></p>
+<p><strong>反模式三：状态里放不可序列化对象。</strong> 表现：为了省事把连接、客户端、模型实例放进状态，只在内存模式下测试。后果：一旦启用持久化就报错，或者恢复后拿到一个已经失效的资源句柄。修法是坚持"状态里只放数据"。</p>
+<p><strong>反模式四：靠字段名暗示语义。</strong> 表现：字段叫 <code>data</code>、<code>info</code>、<code>result</code>，没有类型也没有说明。后果：多个节点的写入语义不一致（有人追加有人覆盖），且无人察觉。修法是字段要有类型和明确的归约器，命名要体现语义。</p>
+<p><strong>反模式五：状态更新依赖读取顺序。</strong> 表现：节点先读某个字段，据此决定返回值，而这个字段可能在本轮被其他节点修改。后果：结果不确定，同样的输入两次执行可能得到不同结果。修法：需要依赖的东西必须有明确的边，不能靠"同轮读到的值"。</p>
+<h2 id="_8">常见误区与排查</h2>
+<ul>
+<li><strong>"状态字段越多越灵活"</strong> → 症状：状态难以理解，检查点体积大，恢复后行为异常。根因：混淆了共享状态与局部变量。修法：按"是否需要跨步骤共享或跨检查点存活"筛选字段。</li>
+<li><strong>"节点直接改状态对象更直观"</strong> → 症状：并发更新时数据丢失。根因：返回了全量而非增量。修法：节点只返回自己修改的部分，合并交给引擎。</li>
+<li><strong>"列表字段默认追加就行"</strong> → 症状：状态随循环轮数无限增长，最终撞上限。根因：追加没有配去重或裁剪策略。修法：为累积型字段设计上限与淘汰规则。</li>
+<li><strong>"并行能让流程变快"</strong> → 症状：并行后总耗时没明显改善。根因：忽略了一轮耗时由最慢节点决定。修法：只并行耗时相当的节点；或者把慢节点拆成多个可并行的子任务。</li>
+<li><strong>"两个节点写同一个字段应该没问题"</strong> → 症状：偶发数据不一致，且难以复现。根因：归约器语义与写入模式不匹配（通常是覆盖被用在多来源写入上）。修法：逐字段检查归约器。</li>
+<li><strong>"状态里放一个客户端对象方便调用"</strong> → 症状：开启持久化后报序列化错误，或者恢复后调用失败。根因：把资源放进了状态。修法：状态里只存配置与标识。</li>
+</ul>
+<h2 id="_9">本章要点</h2>
+<ul>
+<li>图选择共享状态而非消息传递，因为持久化、暂停、观测都要求"系统状态可完整取出"。</li>
+<li>读写规则是<strong>读全量、写增量</strong>：增量可合并，全量不可合并。这是并发安全的根本。</li>
+<li>归约器是每个字段的合并语义，必须显式声明；覆盖、追加、求和、去重、自定义各有适用面。</li>
+<li>用错归约器的三种症状：数据变少（覆盖被用错）、无限增长（追加被用错）、数值偏高（求和被用错）。</li>
+<li>超步模型下，同轮节点互不可见；边隐含了"产生新超步"的含义；一轮耗时由最慢节点决定。</li>
+<li>状态三原则：可序列化（只放数据不放资源）、可合并（归约语义与写入模式匹配）、可解释（只看状态能说出进展）。</li>
+<li>反模式的核心是两类错误：把状态当全局变量（该进来的不该进来的都进来），以及把状态当仓库（该放外面的放进来了）。</li>
+</ul>
+<h2 id="_10">迁移视角：如果不用这个框架</h2>
+<p>"读全量、写增量、按规则合并"这套模式，就是<strong>事件溯源与 CRDT（无冲突复制数据类型）思想的简化版</strong>。它在分布式系统里已经被研究了几十年，核心结论是现成的：<strong>如果多个参与者可能并发修改同一份数据，那么你只有两种选择——要么串行化（付出性能代价），要么让更新本身可交换、可结合（付出设计代价）。</strong></p>
+<p>图选择了后者。这个选择意味着你必须为每个字段想清楚合并语义——这是设计的负担，但它换来了并行的自由和状态的可恢复。同样的取舍你在别处也会遇到：多副本数据库、协同编辑、分布式计数器、离线同步，处理方式都是同一套思路。</p>
+<p>所以当你在设计自己的状态时，可以借用那两个成熟的概念框架。<strong>用事件溯源的眼光看</strong>：状态是事件的累积结果，那么"只追加不修改"的字段天然是安全的。<strong>用 CRDT 的眼光看</strong>：如果每个字段的更新都是可交换的（无论顺序如何合并结果相同），那么并发就不需要协调。追求"字段更新的可交换性"是一个很有价值的设计目标——它能把大量并发问题消灭在设计阶段。</p>
+<p>最后一条关于"可解释"的原则值得带到任何系统设计里：<strong>一个需要被持久化的数据结构，同时也是排查问题时唯一的现场证据。</strong> 它的设计标准不该只是"够用"，还应该包含"出事时能看懂"。</p>
+<div class="pager"><a class="prev" href="ch10-why-graphs.html"><span>上一章</span><b>第 10 章　为什么链不够：Agent 循环的本质</b></a><a class="next" href="ch12-execution-engine.html"><span>下一章</span><b>第 12 章　执行引擎：超步模型与调度</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

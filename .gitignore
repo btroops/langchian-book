@@ -1,0 +1,20 @@
+# 工作区元数据（智能体记忆与个人笔记，不属于书籍内容）
+.workbuddy/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# 构建过程的临时文件
+*.tmp
+*.bak

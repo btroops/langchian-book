@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 14 章　中断与人在回路</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="layout">
+  <aside class="side"><a class="side-brand" href="index.html"><b>智能体运行时原理</b><span>从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part">第一部分　问题空间<em>框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html"><i>01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html"><i>02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html"><i>03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html"><i>04</i>LangChain 家族的全景与演进脉络</a><div class="side-part">第二部分　LangChain 的抽象原理<em>组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html"><i>05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html"><i>06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html"><i>07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html"><i>08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html"><i>09</i>检索增强（RAG）的原理</a><div class="side-part">第三部分　LangGraph：从链到图<em>状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html"><i>10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html"><i>11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html"><i>12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html"><i>13</i>持久化与检查点：Agent 能力的地基</a><a class="item on" href="ch14-interrupts-and-hitl.html"><i>14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html"><i>15</i>多智能体拓扑</a><div class="side-part">第四部分　依赖族与生态<em>契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html"><i>16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html"><i>17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html"><i>18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html"><i>19</i>部署与运行时形态</a><div class="side-part">第五部分　原理迁移<em>超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html"><i>20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html"><i>21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html"><i>22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html"><i>23</i>结语：框架会变，原理不会</a><div class="side-part">附录<em>速查与自检</em></div><a class="item" href="apa-glossary.html"><i>A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html"><i>B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot">共 23 章 + 2 个附录 · 原理优先<br>零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main">
+<article>
+<h1>第 14 章　中断与人在回路</h1>
+<div class="tocbox"><b>本章小节</b>
+<ul>
+<li><a href="#_1">引子</a></li>
+<li><a href="#_2">中断的本质：有契约的退出与重入</a></li>
+<li><a href="#_3">硬中断与软中断</a></li>
+<li><a href="#_4">三种人在回路模式</a></li>
+<li><a href="#_5">中断状态的构造与恢复契约</a></li>
+<li><a href="#_6">一致性挑战</a></li>
+<li><a href="#_7">长时中断的工程问题</a></li>
+<li><a href="#_8">常见误区与排查</a></li>
+<li><a href="#_9">本章要点</a></li>
+<li><a href="#_10">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote>
+<p>中断不是"暂停一个线程"，而是一次有契约的退出与重入。契约设计不好，恢复时就会拿到一份不完整的上下文。</p>
+</blockquote>
+<h2 id="_1">引子</h2>
+<p>一个采购审批流程接入了智能体。模型读完采购申请后，判断出这是"异常高金额"，需要人工确认。流程在这里停下，等待审批人在界面上点"同意"或"驳回"。</p>
+<p>第一版实现很顺利，因为测试时审批人五秒内就点了按钮。上线后遇到真实场景：审批人半小时后才处理。这半小时里，流程的外部环境发生了变化——供应商发来了新的报价、另一个审批人为同一笔采购提交了意见、申请单被其他人修改了金额。</p>
+<p>审批人点"同意"之后，流程继续执行。结果是用<strong>旧的金额</strong>完成了提交，因为那个金额在中断时刻被复制进了上下文，恢复后使用的是这份历史值。</p>
+<p>这个事故说明中断机制里最微妙的一件事：<strong>中断创造了"时间跨度"，而时间跨度带来状态漂移。</strong> 中断前保存的状态是那一刻的快照，恢复时外部世界已经不是那一刻了。系统必须明确回答"恢复时以什么为准"，否则就会在某个不起眼的地方产生不一致。</p>
+<p>这个问题的另一个名字是"人在回路"（Human-in-the-loop）。它看起来只是个交互功能，实际上是一个完整的工程问题域。</p>
+<h2 id="_2">中断的本质：有契约的退出与重入</h2>
+<p>先把中断和"暂停线程"区分开。暂停线程是操作系统层面的概念：挂起执行流，之后从挂起处继续，内存里的所有东西都还在。</p>
+<p>而人在回路里的中断发生在<strong>跨进程、跨时间</strong>的场景：流程停下来了，执行它的进程可能已经结束，半小时后由另一次请求触发继续。这意味着：</p>
+<p><strong>中断是一次完整的退出。</strong> 执行栈被丢弃，内存被释放。所有需要延续的东西必须被显式写进检查点。</p>
+<p><strong>恢复是一次新的进入。</strong> 从检查点读出状态与位置，重建执行环境，从约定的位置继续。</p>
+<p><strong>因此中断需要一个契约。</strong> 契约要规定三件事：中断点在哪里合法、中断时保存什么、恢复时接受什么输入。这三件事任何一件含糊，恢复就会出问题。</p>
+<div class="dg">
+  <div class="dg-flow">
+    <div class="dg-box">执行至约定位置<br><small>中断点</small></div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box dg-alt">保存检查点<br><small>状态 + 位置 + 待决问题</small></div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box">退出，等待外部输入</div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box dg-hl">带输入重入，从约定位置继续</div>
+  </div>
+</div>
+
+<p><strong>"待决问题"是中断契约里最容易漏掉的一项。</strong> 中断不是简单地"停在这里"，而是要告诉外部"我在等什么"。等的是审批吗？等的是一个缺失的参数吗？等的是选择走哪条分支吗？这三种情况恢复时需要的输入形态完全不同。如果中断时不明确说明待决问题，恢复方就不知道自己该提供什么——于是只能靠约定（"总之恢复时传一个布尔值"），而这种约定会随流程演化而失效。</p>
+<h2 id="_3">硬中断与软中断</h2>
+<p>中断有两种施加方式，区别在于"谁来决定停下"。</p>
+<p><strong>硬中断由外部指定位置。</strong> 配置里声明在图上的某些位置之前（或之后）暂停。它的特点是<strong>不依赖流程内部的逻辑</strong>，只依赖结构位置。这样做的好处是：安全审查点可以集中配置管理，不必在业务逻辑里到处埋判断。坏处是：暂停点是静态的，无法根据运行时情况决定是否真的需要暂停。</p>
+<p>硬中断的典型用法是合规要求——"所有涉及资金的节点之前必须暂停"。这类需求来自外部约束，且不允许业务逻辑遗漏，因此适合用硬中断声明。</p>
+<p><strong>软中断由流程内部触发。</strong> 在执行过程中，节点主动发出"我要暂停"的信号，并附带待决问题。它的特点是<strong>动态且携带上下文</strong>——可以说明"因为检测到金额超限所以暂停，请确认是否继续"。</p>
+<p>软中断的典型用法是模型判断类需求——"模型读到了一份不明确的合同条款，需要人工澄清"。这类需求无法在静态结构上预先声明。</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>硬中断</th>
+<th>软中断</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>谁决定暂停</td>
+<td>外部配置</td>
+<td>流程内部逻辑</td>
+</tr>
+<tr>
+<td>暂停点</td>
+<td>静态、可集中管理</td>
+<td>动态、依赖运行状态</td>
+</tr>
+<tr>
+<td>是否可携带上下文</td>
+<td>有限（只能声明位置）</td>
+<td>可携带详细待决问题</td>
+</tr>
+<tr>
+<td>典型场景</td>
+<td>合规强制审查点</td>
+<td>模型判断需要人工介入</td>
+</tr>
+<tr>
+<td>主要风险</td>
+<td>暂停点遗漏或过多</td>
+<td>触发条件不当导致频繁打断</td>
+</tr>
+</tbody>
+</table>
+<p>实践中两者会混用：用硬中断保证合规审查点不遗漏，用软中断处理需要动态判断的情况。<strong>关键是要能明确区分"这个暂停是结构性要求还是逻辑性需要"</strong> ——因为两者的治理方式不同：结构性要求靠配置审查保证完整性，逻辑性需要靠触发条件的质量保证不滥用。</p>
+<h2 id="_4">三种人在回路模式</h2>
+<p>人在回路的具体交互形态主要有三种，它们的工程复杂度递增。</p>
+<p><strong>模式一：审批。</strong> 流程停下，人来决定"继续"还是"中止"。这是最简单的一种：恢复时的输入是一个二值决策。它的实现要点是<strong>要明确"中止"的含义</strong>——是流程正常结束（带一个"被拒绝"的结果），还是异常终止？这两个语义在下游处理上完全不同，必须界定清楚。</p>
+<p><strong>模式二：编辑。</strong> 流程停下，人修改某些内容，然后带着修改后的内容继续。复杂度上升的地方在于：<strong>修改会与流程内部的状态产生冲突。</strong> 如果人修改了一个字段，而这个字段在流程的其他地方已经被引用（比如基于它做过的判断），那么修改会导致"已做出的判断与实际状态不一致"。</p>
+<p>处理这个冲突有三种策略：允许修改并<strong>强制重新执行受影响的部分</strong>（最安全，代价是可能推翻后续已完成的工作）；允许修改但<strong>只对新产生的步骤生效</strong>（简单，但会造成前后不一致）；<strong>限制可修改的字段范围</strong>（把修改限制在"只影响下游、不影响上游判断"的字段上，这是最实用的折中）。</p>
+<p><strong>模式三：工具确认。</strong> 流程在执行某个动作前停下，请人确认这个动作是否可以执行。这一模式与其他两种的区别在于：<strong>它挂在"行动"上，而不是挂在"流程位置"上。</strong> 它通常与第 7 章的工具调用协议配合——在执行意图产生后、实际执行前插入确认。</p>
+<p>这一模式的价值在于它把"不可逆动作"变成了"可审查动作"，但它有一个使用上的陷阱：<strong>如果每一个动作都要确认，人就成了瓶颈，自动化的意义消失。</strong> 所以它必须配套"确认条件"——只在满足特定特征时确认（金额超限、涉及敏感数据、影响范围大）。确认条件的质量决定了这个机制是"有用的安全阀"还是"扰人的弹窗"。</p>
+<div class="dg">
+  <div class="dg-vs">
+    <div class="dg-col-head">模式与恢复输入</div>
+    <div class="dg-col-head dg-alt-head">设计要点与主要风险</div>
+    <div class="dg-cell">审批：二值决策</div>
+    <div class="dg-cell dg-alt">需界定"中止"是正常结束还是异常终止</div>
+    <div class="dg-cell">编辑：带修改内容</div>
+    <div class="dg-cell dg-alt">修改与既有判断的冲突必须明确处理策略</div>
+    <div class="dg-cell">工具确认：动作级放行</div>
+    <div class="dg-cell dg-alt">必须有确认条件，否则人成为瓶颈</div>
+  </div>
+</div>
+
+<h2 id="_5">中断状态的构造与恢复契约</h2>
+<p>要让中断可靠工作，中断时必须构造一份能支撑恢复的完整信息。这份信息至少包含五项。</p>
+<p><strong>第一，待决问题的精确描述。</strong> 不只是"需要审批"，而是"需要审批什么、依据是什么、有哪些选项"。这是给外部界面用的，也是给事后审计用的。</p>
+<p><strong>第二，恢复所需的全部上下文。</strong> 恢复方要能做决策，就必须拿到足够的信息。这里有一个设计选择：<strong>是把所需内容复制进中断信息，还是只放引用？</strong> 复制简单但会产生"历史值"问题（引子里的事故）；放引用则要保证引用在恢复时仍然有效，且内容没有被篡改。实用的折中是：<strong>复制用于决策的关键值，同时保留引用以便校验是否发生变化。</strong></p>
+<p><strong>第三，合法性校验信息。</strong> 恢复时谁有权继续？这个决策在什么时间之前有效？这些约束必须随中断信息一起保存并在恢复时校验。<strong>没有权限校验的恢复接口是一个严重的漏洞</strong>——任何知道标识的人都能替审批人做决定。</p>
+<p><strong>第四，幂等标识。</strong> 恢复请求可能被重发（用户重复点击、网络重试），必须有机制保证同一个中断只被恢复一次、同一次恢复只被执行一次。</p>
+<p><strong>第五，版本信息。</strong> 与检查点一样，中断信息也要带版本，以便流程结构演进后能正确处理历史中断。</p>
+<p><strong>恢复契约的设计有一个通用原则：恢复应该是一个"提交"操作，而不是一个"修改"操作。</strong> 也就是说，恢复请求本身应该是幂等的、可校验的、带版本检查的。把它当作分布式系统里的一个重要写操作来对待，而不是当作一个普通的回调。</p>
+<h2 id="_6">一致性挑战</h2>
+<p>回到引子里的问题：中断创造了时间跨度，状态会漂移。有哪些漂移，怎么处理？</p>
+<p><strong>漂移类型一：外部数据变化。</strong> 中断前读到的数据在恢复时已经过期。处理方式有两种：<strong>乐观</strong>（继续使用中断时的快照，保证决策的一致性——因为决策本来就是在当时的信息下做出的）和<strong>保守</strong>（恢复时重新读取，若发生变化则要求重新审批）。哪一种对取决于业务语义：如果决策依据的是"当时的情况"，用乐观；如果依据的是"当前的情况"，用保守。</p>
+<p><strong>漂移类型二：权限变化。</strong> 中断时审批人有权限，恢复时权限已被撤销。这必须校验——<strong>权限校验应当发生在恢复时，而不是只发生在中断时。</strong></p>
+<p><strong>漂移类型三：流程结构变化。</strong> 中断期间部署了新版本，流程结构变了。处理方式有三种：拒绝恢复（最安全，用户需重新发起）、按旧版本恢复（需要保留旧版本的定义）、迁移到新版本继续（最复杂，通常只在有明确迁移规则时使用）。<strong>大多数团队应该选择第一种，并把它作为明确的产品行为告知用户</strong>，而不是试图支持复杂的迁移。</p>
+<p><strong>漂移类型四：并发恢复。</strong> 两个人同时点了"同意"。处理方式是幂等标识加状态检查——第一个恢复成功后，中断状态被标记为已解决，第二个请求被告知"该中断已处理"。这一条不做，就会出现"同一笔审批被通过两次"的事故。</p>
+<div class="dg">
+  <div class="dg-col">
+    <div class="dg-box">中断发生，保存快照与待决问题</div>
+    <div class="dg-arw">↓ 时间跨度（可能数小时或数天）</div>
+    <div class="dg-box dg-alt">外部数据变化 · 权限变化 · 流程版本变化</div>
+    <div class="dg-arw">↓ 恢复请求到达</div>
+    <div class="dg-box">校验：权限 · 时效 · 幂等 · 版本</div>
+    <div class="dg-arw">↓</div>
+    <div class="dg-box dg-hl">按约定的"旧值/新值"策略继续执行</div>
+  </div>
+</div>
+
+<h2 id="_7">长时中断的工程问题</h2>
+<p>中断可能持续很久（几天），这会引出一批纯工程问题。</p>
+<p><strong>时效与过期。</strong> 一个中断如果放置了三十天，它的审批价值可能已经消失（业务已经用别的方式处理了）。所以中断需要有效期，过期后应该有明确处理（自动作废、自动升级、通知发起人）。<strong>不做过期处理的中断会积累成"僵尸任务"</strong>，占用存储、干扰统计、在某个时刻被误恢复。</p>
+<p><strong>通知与重试。</strong> 中断的目标是"等一个人做决定"，那么这个人必须被告知。通知通道的可靠性、通知失败的补偿、以及长期未响应的升级路径，都是必须设计的部分。<strong>中断机制不能假设"人一定会看到"。</strong></p>
+<p><strong>并发容量。</strong> 如果同时存在大量待决中断，系统需要能承载（存储、查询、界面、恢复时的并发）。这是一个容易被低估的容量规划问题。</p>
+<p><strong>监控。</strong> 需要监控的指标至少有：待决中断的数量与时长分布、中断恢复的成功率、恢复被拒绝的比例、超时中断的数量。这些指标的变化往往先于业务问题出现——比如"某类中断的恢复成功率下降"可能意味着界面上的待决问题描述不清楚。</p>
+<h2 id="_8">常见误区与排查</h2>
+<ul>
+<li><strong>"中断就是保存状态，恢复时接着跑"</strong> → 症状：恢复后使用了过期数据，产生不一致。根因：没有明确"旧值还是新值"的策略。修法：把这项策略作为设计决策显式写出。</li>
+<li><strong>"恢复接口不需要校验权限"</strong> → 症状：越权审批的风险。根因：把恢复当成内部调用。修法：恢复接口与普通写操作同等级别对待权限校验。</li>
+<li><strong>"中断了就是等审批，不需要说明等什么"</strong> → 症状：恢复方不知道该传什么参数，只能靠约定；流程演化后约定失效。根因：缺少待决问题的显式描述。修法：中断时构造完整的待决问题结构。</li>
+<li><strong>"所有动作都要人工确认最安全"</strong> → 症状：审批队列积压，用户体验恶化，自动化收益消失。根因：确认条件缺失。修法：只对高风险动作设确认点，并明确条件。</li>
+<li><strong>"编辑后继续不会有问题"</strong> → 症状：流程内部出现前后不一致的判断。根因：修改的内容被上游判断引用过。修法：限制可编辑字段范围，或强制重算受影响部分。</li>
+<li><strong>"中断可以一直挂着，等用户回来处理"</strong> → 症状：大量僵尸中断，存储与统计混乱，偶发误恢复。根因：缺少时效与过期处理。修法：设有效期与过期动作，并建立升级通知路径。</li>
+</ul>
+<h2 id="_9">本章要点</h2>
+<ul>
+<li>中断是跨进程、跨时间的<strong>退出与重入</strong>，因此必须有契约：中断点许可、保存内容、恢复输入。</li>
+<li>中断契约里最容易漏的是"待决问题"——不说明在等什么，恢复方就不知道该提供什么。</li>
+<li>硬中断靠结构位置声明（保证合规点不遗漏），软中断靠流程逻辑触发（支持动态判断）。两者治理方式不同。</li>
+<li>三种人在回路模式：审批（二值）、编辑（须处理与既有判断的冲突）、工具确认（须有确认条件）。</li>
+<li>中断信息五项必备：待决问题、恢复上下文、合法性校验信息、幂等标识、版本信息。</li>
+<li>恢复应被当作一个"提交"操作对待：幂等、可校验、带版本检查。</li>
+<li>四类漂移：外部数据、权限、流程版本、并发恢复。每一类都必须有明确策略，其中流程版本漂移在多数团队应选择"拒绝恢复"。</li>
+<li>长时中断需要额外处理时效过期、通知补偿、并发容量与监控；不做过期处理会积累僵尸任务。</li>
+</ul>
+<h2 id="_10">迁移视角：如果不用这个框架</h2>
+<p>人在回路的本质是<strong>把人工决策点嵌入自动化流程</strong>。这个模式在传统工作流、审批系统、CI/CD 流水线（"需要人工批准才能发布"）里都存在，两边可以互相借鉴。</p>
+<p>从传统审批系统可以借来三条经验。<strong>第一，待办事项是一种一等对象。</strong> 成熟系统会维护"待办列表"，而不是靠消息通知——因为通知会丢失，待办列表不会。<strong>第二，审批要有代理人机制和时间约束。</strong> 人不在时怎么办，是这类系统必须回答的问题，答案通常包括代理人、升级、超时默认动作。<strong>第三，审计是核心功能不是附加功能。</strong> 谁在什么时候依据什么信息做出了什么决定，这个记录本身就是业务价值。</p>
+<p>从 CI/CD 可以借来一条非常重要的经验：<strong>审批点的位置应该在"影响面最大的动作之前"，而不是"流程开始之前"。</strong> 也就是让自动化先做完全部准备工作（编译、测试、生成变更计划），最后一步才等人点确认。这既减少了等待时间，也让审批人有更多信息可依据。这个原则用到智能体上就是：<strong>把中断点尽量后移到不可逆动作之前，而不是放在流程开头。</strong></p>
+<p>另有一条是本章独有的、值得推广到所有异步系统里的结论：<strong>恢复请求是一个高风险的写操作，必须按写操作的标准来对待。</strong> 幂等、权限、时效、版本检查——这四项在任何"外部触发的继续执行"场景里都适用，无论它是工作流的回调、消息队列的重投递，还是智能体的中断恢复。</p>
+<div class="pager"><a class="prev" href="ch13-persistence-and-checkpoints.html"><span>上一章</span><b>第 13 章　持久化与检查点：Agent 能力的地基</b></a><a class="next" href="ch15-multi-agent-topologies.html"><span>下一章</span><b>第 15 章　多智能体拓扑</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

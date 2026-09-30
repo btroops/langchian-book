@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="rpPJ1jteaK0NiC9Brl7BND">
+<head data-page-node-id="Rxip4qdLHlFFJ5q1558zW8">
+<meta charset="utf-8" data-page-node-id="TqNnQ6gnoR57GKRKW1XAED">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="lwdp5F3n6Y3r6WxZ0noDsr">
+<title>第 7 章　模型与消息：LLM 适配层的原理</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body data-page-node-id="74A1egROtKVtGPoHBB16yM">
+<div class="layout" data-page-node-id="qADfQnzrR5vETzJ9TY3pff">
+  <aside class="side" data-page-node-id="4RW2FTrFIlm0vMfOjTJHEK"><a class="side-brand" href="index.html" data-page-node-id="raB7OQCPiLUqTQRZHsZQqQ"><b data-page-node-id="RrLpAYmL6qDqtVtcPa8fkp">智能体运行时原理</b><span data-page-node-id="18DC6G1G0jVR0Cc3pvtjKU">从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part" data-page-node-id="9nE7yzHCCns7ZNqWFKOFD3">第一部分　问题空间<em data-page-node-id="OIz01emeTP6rc9zHN36tNl">框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html" data-page-node-id="o4WrehQewM1wvMIYzUB0Om"><i data-page-node-id="rL3AZSdWPHjX2rTlDEQKnG">01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html" data-page-node-id="UgGZqvDrQMZavELRQ0WVQO"><i data-page-node-id="R8FbEdHhhwSbObGuvKWida">02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html" data-page-node-id="zp4EZlStllwao02R9cjuOD"><i data-page-node-id="bfu54QMK3UoQlEuF96WpFD">03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html" data-page-node-id="BXYhUNa0wv8BMCAGbn5HkE"><i data-page-node-id="H3EpBlv0nuBlDiQtnbUPmq">04</i>LangChain 家族的全景与演进脉络</a><div class="side-part" data-page-node-id="i17q742AhO9xqSrph3vXKR">第二部分　LangChain 的抽象原理<em data-page-node-id="5uZXQHISR0tc6tmdPqY91y">组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html" data-page-node-id="5bVtH9G68wSVdTjsUujNfb"><i data-page-node-id="3RelVgDHzW3HDQwSy33xLe">05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html" data-page-node-id="3o7EWdEwExEcw83waVwiHB"><i data-page-node-id="7AtCFH6FezhS2Mppj0Hzzw">06</i>LCEL：声明式编排的原理</a><a class="item on" href="ch07-model-adaptation.html" data-page-node-id="nOk0O6EYCTYDZS9Pzt09gP"><i data-page-node-id="d6B2AgusBqmTpdT1DrAZNh">07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html" data-page-node-id="so1h0DvJUXHtB1j2BbidSZ"><i data-page-node-id="ih4zPoAyfUTvOWH2NcNhhv">08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html" data-page-node-id="6LTP1dH4jEmDBkd6ojogpx"><i data-page-node-id="OEojye297k0CfATWQvZaHk">09</i>检索增强（RAG）的原理</a><div class="side-part" data-page-node-id="xfkRnWyB2ULsM9UQuLYJcV">第三部分　LangGraph：从链到图<em data-page-node-id="DTBg8rSqX28NaOpsAixz8g">状态、执行与持久化</em></div><a class="item" href="ch10-why-graphs.html" data-page-node-id="qREymb8siUBrXhZy5EhZCs"><i data-page-node-id="ZhsXNyv5g9PVhcOD2sPGbR">10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html" data-page-node-id="vanWF2BAOeMMj1ljmat3At"><i data-page-node-id="5CRimFKkWJzNnwp3qsZDE1">11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html" data-page-node-id="7TBtL6j8uCR042lA0pBUbq"><i data-page-node-id="LrFKYw3JFNtLfn87hVHzRx">12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html" data-page-node-id="iG7u3Yx6bZeSFmipzg6Hs3"><i data-page-node-id="CXil75lI82Z3DuvzlARQcd">13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html" data-page-node-id="x1XvqgHNztlilCeMlZ8IKS"><i data-page-node-id="Kf6k7mZsUB85h28FwHL0Lv">14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html" data-page-node-id="9gHpYQ7BPb14RhwfYDZqU6"><i data-page-node-id="cfy0gbSDGYprw9D9kU3wea">15</i>多智能体拓扑</a><div class="side-part" data-page-node-id="YfMk3W6LxjaAiuEMZEvWCA">第四部分　依赖族与生态<em data-page-node-id="ZZ9BbzLCIEF9z8sUBzGj5t">契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html" data-page-node-id="1WMzEiFUuj8l6s0NbsACro"><i data-page-node-id="GwDNT32VNstDJSTUxAmm14">16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html" data-page-node-id="XSggmm0pCzz4uOHVSGLhFu"><i data-page-node-id="CY6tSRqd3LVHQ31a3HKtlX">17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html" data-page-node-id="3ovBQJXaFv0nHaZm9ZhNzh"><i data-page-node-id="eNOw57cEIB1IUP9ReIDuoB">18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html" data-page-node-id="2VZlJGYeABmVYL4r133onz"><i data-page-node-id="kpZGwHb82RjcGhqfAZDS3Z">19</i>部署与运行时形态</a><div class="side-part" data-page-node-id="PWO6bEXHhu3krd1spDHyn2">第五部分　原理迁移<em data-page-node-id="7QAIjPJbhs2xfkzm7RIFcs">超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html" data-page-node-id="1DrTgHXZH5Ym90MshuT8hi"><i data-page-node-id="Va7R4D4HCWRgxwc5JISktF">20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html" data-page-node-id="kHlfGQRP6EZskw5XhwbxJ2"><i data-page-node-id="FgP7b5wrNFiA0nYStWJmub">21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html" data-page-node-id="iBzeTZ9e2oyet0XkYWVJCl"><i data-page-node-id="wHtFy3hR5hbk8mIu0Qghyy">22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html" data-page-node-id="c7Z3TTuJy9XUoMG76CDFGZ"><i data-page-node-id="StTBhnOzJaZ5Pm7BOybsw6">23</i>结语：框架会变，原理不会</a><div class="side-part" data-page-node-id="8WMhMLtd5U3hSm0pgA3tul">附录<em data-page-node-id="TgbTudRemWfV8kTnavkeVK">速查与自检</em></div><a class="item" href="apa-glossary.html" data-page-node-id="RT5VAaD0mNz1gBXpjQXZMF"><i data-page-node-id="nZxbCanD88bkCvvGC9SFmD">A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html" data-page-node-id="gSKW1GYpGDkO42culG88Wo"><i data-page-node-id="lFsRMvLRGeFcbdievnzRAq">B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot" data-page-node-id="bc7pMO5UgTVtlCIpujXIze">共 23 章 + 2 个附录 · 原理优先<br data-page-node-id="VeKmdpVbh8AALgDxbzHMBE">零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main" data-page-node-id="E74vwIlIE4wl82UHFSiZCs">
+<article data-page-node-id="rsqXjtgSvWRFH2Ro5msM8O">
+<h1 data-page-node-id="TB1NXsmZNVukP8YptCY0Oc">第 7 章　模型与消息：LLM 适配层的原理</h1>
+<div class="tocbox" data-page-node-id="8Q56BHniHFnAiXl0XH4Fld"><b data-page-node-id="RWeWd9c3B3QP1yf9OHnk1G">本章小节</b>
+<ul data-page-node-id="vRnfyztKS70rCRtNBGBeZy">
+<li data-page-node-id="NA3ELVFWmUekvRrHiH1o57"><a href="#_1" data-page-node-id="10BymFAUl14pNm2Bfv4ZZ1">引子</a></li>
+<li data-page-node-id="rzES7wWptFbnpczhQIenAq"><a href="#_2" data-page-node-id="Dw18DZYnW2BqdbaUGfLd3k">消息角色模型</a></li>
+<li data-page-node-id="qTE2mIYA0L4nKY2Kh29lhH"><a href="#_3" data-page-node-id="c1pDhcRHqhbKUsSH7IzzT4">适配层必须处理的差异</a></li>
+<li data-page-node-id="1WFe33D1Iwt7oH1DDhu9C8"><a href="#_4" data-page-node-id="qgnjGeKy9q8oCzGwoD6Go7">工具调用协议的本质</a></li>
+<li data-page-node-id="nJ3QFqattnUbP4qQWcP8BL"><a href="#_5" data-page-node-id="nJnZnWfRoR8Lg5ObciYkdl">结构化输出：三条技术路线</a></li>
+<li data-page-node-id="7q0Ah5rbvPwlvVG1WSmSrX"><a href="#_6" data-page-node-id="0zFE0Fy9jAQo12ONbIpoGD">能力降级策略</a></li>
+<li data-page-node-id="qLlGw9qiqzLTl3DAxpC28R"><a href="#_7" data-page-node-id="2aRcpM2PucuqKpxJyXiN3B">常见误区与排查</a></li>
+<li data-page-node-id="xgdcEUdsNw6f02YaUuuNtp"><a href="#_8" data-page-node-id="a2Y9KVkO54zBGidcYxeZrI">本章要点</a></li>
+<li data-page-node-id="6G8RooefMEOugd5G2BFVuJ"><a href="#_9" data-page-node-id="85INBhoXbRtX3kkhGkYuwa">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote data-page-node-id="L5EQ2VmZyNfmssC6jdCcBD">
+<p data-page-node-id="dKm4PLKwkRuF680QM0C7hA">适配层要抹平的不是 API 差异，而是能力差异。前者是工程活，后者是设计难题。</p>
+</blockquote>
+<h2 id="_1" data-page-node-id="MWisv5a2UuMnLpidE8IKlw">引子</h2>
+<p data-page-node-id="2VgIwluCzoqHaY3EVCRKWj">"支持一百多个模型供应商"这句话听起来很有说服力，但它掩盖了一个问题：这些模型的能力并不一致。</p>
+<p data-page-node-id="RF5UW1C5D50uRJohUJ7zbH">有的模型原生支持工具调用，有的需要靠提示词诱导它输出特定格式；有的支持多模态输入，有的只接受纯文本；有的流式分片是逐 token 的，有的按语义块返回；有的在同一个响应里既给推理过程又给最终答案，有的把两者混在一起。当你的系统需要"换一个模型试试"时，真正让你痛苦的从来不是改一个模型名，而是<strong data-page-node-id="pn9Kj2G5fxPaAziPllGRlm">那些原本依赖的能力在新模型上不存在，或者语义不一样</strong>。</p>
+<p data-page-node-id="MCi2gjb43QP8YEjoKTCHIB">所以这一章讲两件事：统一的消息模型如何定义"模型交互"这件事；以及适配层在面对能力差异时，哪些差异可以抹平、哪些注定泄漏。</p>
+<h2 id="_2" data-page-node-id="ZEPgdzrbx6yYFm1O04Yj1u">消息角色模型</h2>
+<p data-page-node-id="15Kt2zDZSboOb25UjwfbQ4">把"和模型的交互"抽象成一条<strong data-page-node-id="gULL25FGC45gOEW2OgY8Rb">有序的消息列表</strong>，是这个领域最重要的一个建模决定。它把散乱的字符串拼接变成了一种结构化数据。</p>
+<p data-page-node-id="9Usq3RH40ePjiCHpTirFp6">消息列表里有四种角色，每一种都有自己的语义约束。</p>
+<p data-page-node-id="5dX01Ce09rrTPcShH13AFy"><strong data-page-node-id="f7NMudNB9Py7fgukoRGK4q">系统消息（System）</strong>定义模型的身份、约束和行为准则。它的特点是<strong data-page-node-id="JOF51c1CDVFA7Jt0PVx1sQ">优先级最高但强度不绝对</strong>。说它优先级高，是因为它在语义上覆盖其他所有指令；说它强度不绝对，是因为当用户输入与系统约束冲突时，模型的行为并不总是可靠地遵守系统约束——尤其是当用户输入里包含精心构造的越权指令时。因此<strong data-page-node-id="rhL0fc1mTDjnNsVziJWohn">系统消息是行为指引，不是安全边界</strong>。真正的安全边界必须在宿主侧实现（权限校验、动作白名单、输出过滤），不能寄希望于提示。</p>
+<p data-page-node-id="JtjG1tG7kB8e6ryVO5WNqf"><strong data-page-node-id="WtZzaHi7eoNfm2EkuPHLxy">人类消息（Human）</strong>代表外部输入。它有两个容易被低估的工程含义：一是它<strong data-page-node-id="b5bdeFj9k0ZLg4H8dHDCEr">不完全可信</strong>，用户输入可能包含试图改变模型行为的指令；二是它<strong data-page-node-id="C6xET2GEQLIMdEgMPDO4lR">体量不可控</strong>，用户可能粘贴一整篇文档进来，直接吃掉上下文预算。因此人类消息在进入消息列表前，通常需要经过裁剪或长度检查。</p>
+<p data-page-node-id="kpBgBlxN701XGHYywfASoJ"><strong data-page-node-id="FBGBNiTmtOEjuH8sSexBWw">模型消息（AI）</strong>代表模型的产出。它不只是文本，还可能携带工具调用意图、推理过程、引用信息。把"模型的产出"建模成结构化消息而不仅仅是字符串，是与工具调用能力配套的必要设计——因为工具调用意图必须与文本内容分开表达，宿主机才能区分"这是要说给人听的"和"这是要执行的"。</p>
+<p data-page-node-id="SetF0LFi4dXH1vyqod5dAM"><strong data-page-node-id="CKqB4cnC7UcpBjiQKu5ntn">工具消息（Tool）</strong>代表工具执行的结果。它有两条硬约束，也是实践中最容易踩的坑。</p>
+<p data-page-node-id="gTXrnEAmMGLBeVH9emvQNC"><strong data-page-node-id="dQXg1GAq6ZLWKbFX8HFuW9">约束一：必须紧跟对应的调用意图。</strong> 消息序列的合法性要求"调用意图"和"执行结果"成对出现，顺序不能乱。如果工具消息出现在没有对应调用意图的位置，或者一个调用意图的结果缺失，消息序列在结构上就是非法的。</p>
+<p data-page-node-id="jbCmllY8gJmoj9aM0FbGbh"><strong data-page-node-id="XHcVh3FQqWarn4cEvGaXsS">约束二：必须携带匹配标识。</strong> 当模型在一次响应里提出多个调用意图时，结果必须能一一对应回去。如果对应关系错位，模型会把 A 工具的结果当成 B 的，产生看似合理但完全错误的推理。</p>
+<div class="dg" data-page-node-id="fYn2QpQ7rVg7IS3i5QN5oh">
+  <div class="dg-col" data-page-node-id="uxoppbJ60FkfJpl08ZxyC5">
+    <div class="dg-box" data-page-node-id="mXl7vWe1Mh55xh0REsMugq">系统消息：身份与约束（行为指引，非安全边界）</div>
+    <div class="dg-arw" data-page-node-id="Xn46upIh7Asv3LubBY57NM">↓</div>
+    <div class="dg-box" data-page-node-id="L8ggGKFYMbLZMcv8E18fNc">人类消息：外部输入（不可信、体量不可控）</div>
+    <div class="dg-arw" data-page-node-id="JCgVAhsVTXSGMo9ZpMsCbH">↓</div>
+    <div class="dg-box dg-alt" data-page-node-id="EVbaDz8J6mwU6B6GHtP2NJ">模型消息：文本 + 调用意图（需与文本分离表达）</div>
+    <div class="dg-arw" data-page-node-id="486VrqEG7kxRAhTYTLCjGi">↓ 成对</div>
+    <div class="dg-box dg-hl" data-page-node-id="MCQ4V6IQTpIRGSuFIUYynr">工具消息：执行结果（须紧跟意图、须带匹配标识）</div>
+  </div>
+</div>
+
+<p data-page-node-id="S1R4Mv38C1DI09ux6ttVvj">理解这四种角色的约束之后，很多"消息序列非法"的报错就变得可解释了：它们几乎都源于三种情况——角色顺序不对、调用与结果不成对、匹配标识丢失。</p>
+<h2 id="_3" data-page-node-id="kStyVQUCZZLk4UmR2AJCPf">适配层必须处理的差异</h2>
+<p data-page-node-id="rPlURWyuewB21ASL25MpGv">统一接口的意义在于让调用方不必知道具体供应商。但差异是客观存在的，必须分类处理。</p>
+<table data-page-node-id="aknSfRb0RCU5qeTcLter6n">
+<thead data-page-node-id="MY6FaNC7KpZ2vzoikE6V63">
+<tr data-page-node-id="ytcfHLnCD7TDEVZ0x8mE2M">
+<th data-page-node-id="jHNO1QD1leGMQm9O8LlI3E">差异维度</th>
+<th data-page-node-id="BmcXZlkwBMdGCE77ROGXdV">具体表现</th>
+<th data-page-node-id="yLT54ffhKmun2z2Ng37Bql">能否抹平</th>
+</tr>
+</thead>
+<tbody data-page-node-id="Hak5OFUKspkOdA9ZUxgDjD">
+<tr data-page-node-id="gVFdUGJRZK7QrhQwIhhm6n">
+<td data-page-node-id="U1uZJZ9P5YdW00gvswyABT">消息结构</td>
+<td data-page-node-id="7qst1P2qQg5IgQQ2Vi9kmb">内容块的组织方式、多模态表达方式不同</td>
+<td data-page-node-id="FY2aWWohtHHD9WaVNa0e3l">可抹平（转换为统一内容块）</td>
+</tr>
+<tr data-page-node-id="Yb1pXFJ3cci84ndnujOaJk">
+<td data-page-node-id="MYcYAzbTdfxK42C9Rr6IdD">工具调用格式</td>
+<td data-page-node-id="X57QP3jqWtsLRSMd6fNW46">调用意图的字段名与嵌套层级不同</td>
+<td data-page-node-id="XShCEjsUXGvJzqKTCgcA7u">可抹平（转换为统一的意图结构）</td>
+</tr>
+<tr data-page-node-id="Y2HPJWTlQQKq9pZHOFOs2b">
+<td data-page-node-id="Gq0uT8zzNML1tnkKQ9iZFa">流式分片粒度</td>
+<td data-page-node-id="47RYWQHzYb82vgtI0N2gZI">逐 token、按语义块、按事件</td>
+<td data-page-node-id="WSt0U2DCocGr8iYeN0eAs9">部分可抹平（需容忍粒度差异）</td>
+</tr>
+<tr data-page-node-id="8PprweRiiGPCBSUTov39on">
+<td data-page-node-id="avJHjcZKSm4qL8HKfdFHuh">推理内容</td>
+<td data-page-node-id="rpJpgYq85xMjuUcVPvjOF3">有的单独返回，有的混在正文里</td>
+<td data-page-node-id="rBQ1vWWuNeSvV702cuqtUO">部分可抹平（无法分离时只能标记为"不可分离"）</td>
+</tr>
+<tr data-page-node-id="bgfLfLKzV5iqOFh53EIzFo">
+<td data-page-node-id="oajgcu36iSb292u3HjiRBG">停止条件</td>
+<td data-page-node-id="BFNoGrteFGNcFpNnnfsutE">停止序列、最大长度、工具触发停止的语义不同</td>
+<td data-page-node-id="3RcmzsUXoVtHFm14ZDtsT9">难以完全抹平</td>
+</tr>
+<tr data-page-node-id="DjxRMD2tRpOQ2nUAsPhmxW">
+<td data-page-node-id="TTxNLH9lTufRictrJoPDGf">计数与计费</td>
+<td data-page-node-id="etbyCL89DWXR9Z7YA9Ycli">token 计算方式、缓存命中的计价规则不同</td>
+<td data-page-node-id="ph26X5vrhrEdNDTtBBmkjS">不可抹平（只能如实传递）</td>
+</tr>
+<tr data-page-node-id="XGJ1ytfZ0SgYllIuL988yX">
+<td data-page-node-id="fGfWES4a68WHPMIiOHGcXn">采样参数</td>
+<td data-page-node-id="NJFPIPBxt8QCXP2cvl04wj">同名参数不同供应商含义不同</td>
+<td data-page-node-id="z1QE30AZ2ESWgL1198ssKu">不可抹平（只能保留最低公分母 + 原样透传）</td>
+</tr>
+</tbody>
+</table>
+<p data-page-node-id="wARAN2u0MThrTbJaiFaDla">这张表最重要的信息是下面那三行。<strong data-page-node-id="9i0yTkQ1VzOB7qg792nlgm">"难以抹平"和"不可抹平"的项，就是适配层必然泄漏的地方。</strong> 认清这一点有实际价值：当你发现换个模型后行为变了，先看这三行——采样参数的含义差异、停止条件的行为差异、计费的差异，都能解释大量"换了模型结果就不一样"的现象。</p>
+<p data-page-node-id="eZWFCcCpv3Ylnh4u1exSMC">一个成熟适配层的设计原则是：<strong data-page-node-id="NHXMAVGnRLAn6QnwSFQUur">把可抹平的差异彻底抹平，把不可抹平的差异显式暴露。</strong> 后者不是失败，硬把不可抹平的东西假装统一才是失败——它会让使用者以为换了模型只是换个名字，然后在某天撞上无法解释的行为变化。</p>
+<h2 id="_4" data-page-node-id="IZe7wl9birZ6yt3UyoDq92">工具调用协议的本质</h2>
+<p data-page-node-id="fYdHomvVp7tT8wYPvE8qQZ">这是本章的核心机制，也是整个智能体能力的地基。</p>
+<p data-page-node-id="8T5iOEULXgNdRAjXiwMURc">工具调用的本质是一套<strong data-page-node-id="HFEdKH0VKYEyu4Js98yq2L">三段式协议</strong>：</p>
+<p data-page-node-id="7rqx3SciXIh7YBe4Qf3hAS"><strong data-page-node-id="0OW96yDE3I2WOrNYe6Z1ya">第一段：模型输出结构化意图。</strong> 模型不做实际执行，它只输出一个结构化的描述——要调用哪个工具、参数是什么。这一步的关键在于<strong data-page-node-id="WveBJo2XjkG7HDNyrqA5yB">输出的结构受模型供应商的原生支持约束</strong>，而不是靠后处理解析。这就把"模型决定做什么"变成了一个可靠的结构化输出问题。</p>
+<p data-page-node-id="1dm9fMPykrUm0u8vDREEyD"><strong data-page-node-id="YZz1SmLXgCcLCuVWSONXtI">第二段：宿主执行。</strong> 真正执行的是宿主程序。工具的实现、权限、超时、重试、日志全在宿主侧。这一步把"做什么"和"能不能做"分开了——模型提出的意图只是意图，宿主有绝对的否决权。</p>
+<p data-page-node-id="zwMp5eIhoy4AR8nNuhfRSO"><strong data-page-node-id="BwUbstfFsPxdF1gZljk8pa">第三段：结果回灌。</strong> 执行结果被包装成工具消息，回到消息列表，模型基于它继续推理。这一步是循环的接续点：模型看到结果，决定是再调一个工具，还是给出最终回答。</p>
+<div class="dg" data-page-node-id="Ab9z4A8DN9vUnhlUq6FxeH">
+  <div class="dg-flow" data-page-node-id="IFaMLUPY6ZI6IGsFuVQHxz">
+    <div class="dg-box" data-page-node-id="xc5Jlp9sWynbI6otkHgWdt">模型输出<br data-page-node-id="BXGEsGU5XtPMJxRP4vZM9N"><small data-page-node-id="CZZshy3ajk1vmuS8oRlWMI">结构化调用意图</small></div>
+    <div class="dg-arw" data-page-node-id="B08KuT23yGS3yM5DUflmGh">→</div>
+    <div class="dg-box dg-alt" data-page-node-id="9hpFpABryNHUZzT07C2ZQR">宿主执行<br data-page-node-id="zyiEVFtoriCm2MiC82PgrB"><small data-page-node-id="scuVG2UOjeK8gLX4DmZAf0">校验 / 权限 / 超时</small></div>
+    <div class="dg-arw" data-page-node-id="JNHmok4hdvdV8YIWVIgEIk">→</div>
+    <div class="dg-box" data-page-node-id="STM5zo3AcLMD0SfwqRPiBu">结果回灌<br data-page-node-id="b5jXbxPkuASAHJKRB3gtdB"><small data-page-node-id="3nAIcI2GVvEeNaDIxAJtg0">包装为工具消息</small></div>
+    <div class="dg-arw" data-page-node-id="BjE0xlOhziT5rGaEudc9SI">↻</div>
+    <div class="dg-box dg-hl" data-page-node-id="DIfeC6acPmQQBBZazzBONA">模型继续推理</div>
+  </div>
+</div>
+
+<p data-page-node-id="N0wCSnsolC1md9l0zf3oxR"><strong data-page-node-id="WCU1KAx558m30ohegI8A4A">为什么这套协议优于"让模型输出 JSON 再解析"？</strong> 三个理由。</p>
+<p data-page-node-id="l5kigTk8gV5zDm0V1ACXnM">第一，<strong data-page-node-id="tEZNqDci0rxXbRqOMnC9gF">结构由模型服务保证，而不是由提示词保证。</strong> 提示词约束是"请求"，模型可能不遵守；原生工具调用是模型服务端参与解码的结构约束，可靠性高一个量级。</p>
+<p data-page-node-id="UpPjG6d9AXtOEq9dIzii10">第二，<strong data-page-node-id="9wUFgXmK9VFc5QWpH1Q4PE">意图与执行分离。</strong> 这给了宿主一个天然的插入点：在执行前做校验、审批、去重、限额。第 14 章的人在回路机制就挂在这条缝上。</p>
+<p data-page-node-id="kTuqUZ0iAtofrHcaIxUUp1">第三，<strong data-page-node-id="jtpmHhEuaBEedd2V1YA7AG">结果是结构化的。</strong> 结果以结构化形式回灌，模型对它的理解更稳定；而如果结果是拼进提示词的一段文本，模型需要猜测它的边界和含义。</p>
+<p data-page-node-id="H2HPYjNlwEGnxADhFFyf2B">一个反向的推论同样重要：<strong data-page-node-id="pgR6EGls0FCSKjeWp3oEIO">工具描述本身是提示词的一部分。</strong> 工具的名称、说明、参数描述，都会进入模型的上下文并影响它的选择。所以"工具设计"是提示工程的一种形式——工具的命名、描述的精确度、参数的可区分度，直接决定模型的调用准确率。工具数量越多，可区分度越重要：给模型二十个功能相近的工具，出错率会显著高于给它五个清晰区分的工具。</p>
+<h2 id="_5" data-page-node-id="DtsUD0w0sgudfWVNNoMC6q">结构化输出：三条技术路线</h2>
+<p data-page-node-id="kiDAtmZwzyoqvjiiBBSEM2">让模型产出程序可用的数据，有三种路线，可靠性依次递增，适用范围依次收窄。</p>
+<p data-page-node-id="AxPHBQFVcvkeBV71g3QJ0k"><strong data-page-node-id="f9NHyaUoCbgsvn5txBpLEC">路线一：提示约束。</strong> 在提示里说明格式要求，然后解析输出。优点是通用，任何模型都能用；缺点是可靠性最低，格式偏差是常态，必须配套解析容错（第 8 章）。</p>
+<p data-page-node-id="uEAhyo01D1kIKRkUQklsQu"><strong data-page-node-id="EDFV2nCZoMgvqm6GKqlayB">路线二：工具调用式借用。</strong> 定义一个"提交结果"的工具，把结果结构定义成这个工具的参数结构，让模型通过"调用工具"来提交答案。优点是复用了工具调用那条可靠的结构化通道；缺点是把"产出结果"包装成了一次"工具调用"，在语义上有点绕，并且在需要模型一边调用真实工具一边产出结构化结果时，可能产生干扰。</p>
+<p data-page-node-id="Aa44PJGuTXLVUC10XW6aQ7"><strong data-page-node-id="qvBUQiPcO7fDBgLrq9NnF6">路线三：受限解码。</strong> 在模型生成时施加语法约束，只允许生成符合结构的 token 序列。这是可靠性最高的方式，因为它从生成层面排除了非法结构；缺点是依赖模型服务支持，且强约束有时会影响生成质量（模型被迫在结构上"想得太早"，推理质量下降）。</p>
+<table data-page-node-id="pkfu6HrPVQrp1JV890yF65">
+<thead data-page-node-id="TfGsEYRzFm9rGdq5l3rhf7">
+<tr data-page-node-id="LPpbwYuOlzsnP18Q2Ixuz4">
+<th data-page-node-id="BGFpD39zsmRKFUXo2LOjij">路线</th>
+<th data-page-node-id="Vd71hEaodLCyKvtfrqyIBR">可靠性</th>
+<th data-page-node-id="VDWEfz7sEZ2N6vbpOEBSxC">通用性</th>
+<th data-page-node-id="gMuZk2vrz6PIMacOnIbYGO">主要代价</th>
+</tr>
+</thead>
+<tbody data-page-node-id="AEb02Vsd0NBCtoyDirGI1B">
+<tr data-page-node-id="KIcR1e4k2JrmZJrlK9s1A6">
+<td data-page-node-id="BmYggXMaTyKRtsQEglrFla">提示约束</td>
+<td data-page-node-id="apsrhMmzqtvRKyccIG5z1F">低</td>
+<td data-page-node-id="5CHBOVnEa6yc6gqbZoc3H7">最高</td>
+<td data-page-node-id="0oSWNCQdaXIi76iclkts6C">必须配套容错解析，失败要重试</td>
+</tr>
+<tr data-page-node-id="gLimFSqzX1FR4fjO9QSxpl">
+<td data-page-node-id="BITF5KRtCgHGfU780Nod16">工具调用式借用</td>
+<td data-page-node-id="FtXYmlaVXqwQUeoMVthc8r">中高</td>
+<td data-page-node-id="SJDfhLJ7WoXDIrCbbVX373">高</td>
+<td data-page-node-id="4SJFKrIYEdnpbokyU7hXUW">语义绕路；与真实工具调用可能互相干扰</td>
+</tr>
+<tr data-page-node-id="hLuOMa8Wwyr3JQkXL0BkeI">
+<td data-page-node-id="0juGToQAtNhlOEfAhIp78A">受限解码</td>
+<td data-page-node-id="9lEcwlgE2g5puDDdkgHmmF">最高</td>
+<td data-page-node-id="nnQ6e4mJM3gTB7m1t7RyLS">依赖服务支持</td>
+<td data-page-node-id="xuYaHTGe09N8fo0WwWHvqD">可能损伤推理质量；能力受供应商约束</td>
+</tr>
+</tbody>
+</table>
+<p data-page-node-id="KG2kGBwRBVb9QE4Ua1PfsU">实践中常见的组合是：<strong data-page-node-id="N7PP3hhfClapBmHIFj2Z0x">优先用受限解码或工具调用路线拿到结构保证，同时保留提示约束作为降级路径。</strong> 这三条路线之间的切换能力，就是第 8 章讲的"降级输出"。</p>
+<h2 id="_6" data-page-node-id="bE2hUQkj8swxm3M3eKcsiF">能力降级策略</h2>
+<p data-page-node-id="W00bqLIXxO8VlYjtmITSV3">当目标模型不支持所需能力时，可选策略有四种，各有明确的适用边界。</p>
+<p data-page-node-id="wVCtoQ9Bzueg23G49p4UAE"><strong data-page-node-id="0RFRrS0d7jZPdQgizGCZjk">策略一：提示模拟。</strong> 用提示词诱导模型模仿缺失的能力（比如让它按格式输出"我要调用某某工具"）。代价是可靠性下降，需要一个更健壮的解析层。适合原型与非关键路径。</p>
+<p data-page-node-id="5VKKxIZTOD30CugiF1Tngs"><strong data-page-node-id="WrRATpZpMlAifbePIExPJF">策略二：拆成两步。</strong> 把一次需要复合能力的调用拆成两次简单调用（先出文本，再用一次调用把它转成结构）。代价是延迟与成本翻倍，但可靠性可控。这是最常用的生产级降级方案。</p>
+<p data-page-node-id="st3CojHy4MW6Z8hnxpXnPX"><strong data-page-node-id="zBaEUUyeXC9FMUnGIAzcqR">策略三：换供应商。</strong> 把需要该能力的那一段单独路由到支持它的模型。代价是引入了多供应商复杂度，以及跨模型的一致性问题。</p>
+<p data-page-node-id="iJ9deHPGd5eMVEVxleq8fH"><strong data-page-node-id="1J6U9ukXzYWG2HyUiGmuce">策略四：显式拒绝。</strong> 直接告知该能力不可用，不静默降级。这在关键能力上往往是最负责任的选择——静默降级会产出看起来正常但质量下降的结果，这正是第 2 章说的静默错误。</p>
+<p data-page-node-id="JHY2eKQGpECmClJaxOfrec">判断标准可以简化成一句话：<strong data-page-node-id="uwRhV4fR0YeDmd4zBHX4Dn">如果降级后的结果与正常结果的差异，用户能感知并且可接受，就降级；如果不能，就拒绝。</strong> 不要用静默降级来掩盖能力缺失。</p>
+<h2 id="_7" data-page-node-id="FCSZ4NXmA4UZ8zg7i8U0se">常见误区与排查</h2>
+<ul data-page-node-id="Z9QkjSIvAXjRzBy9CoBrFI">
+<li data-page-node-id="5sFgZMrIXiUWVCq5YHB4uE"><strong data-page-node-id="Vm2kTxUq98NYedqupjRHBd">"把重要约束写在系统消息里就安全了"</strong> → 症状：用户通过特定措辞绕过了约束。根因：把行为指引当成安全边界。修法：所有安全判定放在宿主侧，提示只负责引导。</li>
+<li data-page-node-id="1vNGeQqRsBM9RbgugfeOAY"><strong data-page-node-id="62x7WCXfIDrgnqSwiEQnAX">"工具消息和调用意图的顺序不重要"</strong> → 症状：消息序列非法的报错，或者模型把结果张冠李戴。根因：忽略了"成对且有序"的硬约束。修法：把消息序列的构造集中在一处，不要在多处手工拼接。</li>
+<li data-page-node-id="fspB3kyxycWwXxZ4A3Xb5U"><strong data-page-node-id="B4HNcOZwPDmp1EGC9jwsfD">"换个模型只是改个名字"</strong> → 症状：换模型后输出风格、长度、工具调用率都变了，甚至出现无法复现的错误。根因：忽略了采样参数与停止条件的语义差异。修法：把不可抹平的差异显式暴露，换模型时逐项检查。</li>
+<li data-page-node-id="bBhYgQtAG1LPIadugPdeZk"><strong data-page-node-id="lDujF9PfHLUUUUqFCnEOd3">"工具写得多，模型能力就强"</strong> → 症状：模型在工具间选错，或者反复试错。根因：可区分度下降。修法：精简工具集，让功能重叠的工具合并或明确分工。</li>
+<li data-page-node-id="H7ODaQEDvHqABIEMYXAwNK"><strong data-page-node-id="sDEuCGfnn2U9ZVhJsfSZ3n">"模型说它调用了工具，就应该已经调用了"</strong> → 症状：模型给出"已完成"的答复，但外部系统没有任何动作。根因：混淆了"输出调用意图"和"实际执行"。修法：永远由宿主执行并把真实结果回灌，不要让模型自行宣告执行结果。</li>
+<li data-page-node-id="4P92Xs8bJNc8LLMchEJ06h"><strong data-page-node-id="On97RCGVU2ODavOOzki1gT">"结构化输出失败就重试到成功"</strong> → 症状：成本飙升，延迟不可控。根因：没有为重试设定上限和降级路径。修法：设定重试次数，超限后走降级路线或显式失败。</li>
+</ul>
+<h2 id="_8" data-page-node-id="saCuNr5g77gQATpaJ2gCzP">本章要点</h2>
+<ul data-page-node-id="XmjHeFlMI5hYk6FPEc4CjF">
+<li data-page-node-id="CMSbyTXvhV1XhljvkAvpg3">把模型交互建模为有序消息列表，是这一层最重要的设计决定；四种角色各有硬约束。</li>
+<li data-page-node-id="tmWxFkTb6Uvoi4LGbuQ8E8">系统消息是行为指引而非安全边界，安全判定必须在宿主侧。</li>
+<li data-page-node-id="k41RJH9E9WeRDR1lwP8Ncq">工具消息必须与调用意图成对有序、携带匹配标识；消息序列的构造应该集中在一处。</li>
+<li data-page-node-id="X04BDV8FSG6HdXNqr8g15w">适配层的真正难点是能力差异而非 API 差异；可抹平的彻底抹平，不可抹平的显式暴露。</li>
+<li data-page-node-id="8ymVWbWJm6BhbOWXibzBWK">工具调用的三段式协议（输出意图 → 宿主执行 → 结果回灌）的价值在于<strong data-page-node-id="7t2OzKy49IY66Pyh086qAt">意图与执行分离</strong>，这是所有控制机制的插入点。</li>
+<li data-page-node-id="KCuu0AaL9tYwcwEkr3Qwjm">工具的描述与命名是提示工程的一部分，可区分度比数量重要。</li>
+<li data-page-node-id="LiCCG6ObAAx8WYWu4TzhxO">结构化输出三条路线可靠性与通用性成反比；生产实践是"拿结构保证 + 保留降级路径"。</li>
+<li data-page-node-id="pyJnGL5abCqcvIRCtkvIpu">能力降级要遵循一条判断：差异用户可感知且可接受才降级，否则显式拒绝。</li>
+</ul>
+<h2 id="_9" data-page-node-id="WbNxBbyXJnE13o5OpOvfN7">迁移视角：如果不用这个框架</h2>
+<p data-page-node-id="SycEjsfrF8zo4AyQ2LHmj3">这一章的内容几乎可以直接搬到你自研的任何系统里，因为消息模型和工具调用协议是<strong data-page-node-id="SDxZ7NGBHSGB2YSTWFcjW5">模型与宿主之间的接口约定</strong>，与框架无关。</p>
+<p data-page-node-id="992C2dAMYlyMBt7PUIVUss">三条最有迁移价值的结论。</p>
+<p data-page-node-id="sgIRVQXJUtQToDbKnLLiRp"><strong data-page-node-id="tght26ql8jq0qwURcGm6LS">第一条：把"意图"和"执行"分开建模。</strong> 这是整个章节里结构最漂亮的一个设计。它带来的是控制权：因为模型只输出意图，宿主就有了校验、审批、去重、限额、记录的全部机会。这个模式在别处也成立——表单提交与后端校验、SQL 生成与执行前审查、配置声明与应用，都是同一个结构。<strong data-page-node-id="ikwDyr2XrqDDcaW7hE0lsy">凡是"生成者与执行者分离"的地方，就存在一个可以插入控制的缝。</strong></p>
+<p data-page-node-id="3JqiiB6bLKEPWNzEgZtDN7"><strong data-page-node-id="x38uRltqJJPACDOVN9KHw7">第二条：区分"请求"和"保证"。</strong> 提示词是请求，结构化通道是保证。设计系统时应该明确标注每一处依赖的是哪一种。凡是关键路径依赖"请求"的地方，就是脆弱点，需要补充校验或改造为"保证"。</p>
+<p data-page-node-id="FoNHXpTlsM0cFRY2ztUVE3"><strong data-page-node-id="KeDl8LGW6BDBNSP6su8YFK">第三条：适配层的诚实原则。</strong> 统一接口最大的风险不是漏掉了某个供应商，而是伪装了不存在的统一性。把不可抹平的差异显式列出来，比一个看起来很干净的统一接口更有价值——因为前者让你在换实现时知道该检查什么，后者让你以为不用检查。</p>
+<p data-page-node-id="GuKPji3aCV1zl6Yz9As5Xn">最后一条经验关于工具设计：<strong data-page-node-id="9jJ6iCr9L1l27HU51Br8X3">工具集是一份给模型看的 API 文档，它的使用者是模型而不是人。</strong> 所以设计标准不是"人类工程师看着舒服"，而是"模型能否在给定的描述下稳定地做出正确选择"。命名要能自解释，描述要说明使用时机而非仅仅说明功能，参数要避免歧义（"日期"要说清格式）。这三点决定了工具调用的准确率上限，而准确率上限决定了智能体能否被信任。</p>
+<div class="pager" data-page-node-id="PuXVBzL8sG9KWsjDDIFJ7X"><a class="prev" href="ch06-lcel-principles.html" data-page-node-id="KnQg32kvBZrdtwBif0Hwmn"><span data-page-node-id="7HrPrTaFuVpCYQ67Uvxf6H">上一章</span><b data-page-node-id="PLTFHerqPnUBbW8XqLaYgz">第 6 章　LCEL：声明式编排的原理</b></a><a class="next" href="ch08-prompt-and-parsing.html" data-page-node-id="WEVv78VdDivtGP7TvOAHog"><span data-page-node-id="TzZFW9Sht9mfp3D8hncBhU">下一章</span><b data-page-node-id="BTDglFqh25ZOlDTDABPkaZ">第 8 章　提示与解析：IO 边界的类型契约</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>

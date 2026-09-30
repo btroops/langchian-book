@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 10 章　为什么链不够：Agent 循环的本质</title>
+<style>
+:root{
+  --bg:#fbfaf7; --panel:#ffffff; --ink:#1f2328; --ink-2:#4a5260; --ink-3:#7c8796;
+  --line:#e4e6ea; --line-2:#eef0f3; --accent:#3d5fd9; --accent-soft:#eef2ff;
+  --accent-2:#b8722c; --accent-2-soft:#fdf6ec; --radius:10px;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16px; line-height:1.85; letter-spacing:.01em;
+}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex; align-items:flex-start; max-width:1460px; margin:0 auto}
+
+/* ---------- 侧栏 ---------- */
+.side{
+  width:296px; flex:0 0 296px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--line); background:var(--panel); padding:26px 20px 60px;
+}
+.side-brand{display:block; margin-bottom:22px; color:var(--ink)}
+.side-brand b{display:block; font-size:17px; letter-spacing:.02em}
+.side-brand span{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.6; margin-top:5px}
+.side-part{margin:18px 0 6px; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase}
+.side-part em{display:block; font-style:normal; font-weight:400; letter-spacing:0; text-transform:none; font-size:11px; color:#a3abb7; margin-top:2px}
+.side a.item{
+  display:block; padding:5px 10px; border-radius:6px; font-size:13.5px; color:var(--ink-2);
+  line-height:1.5; margin-bottom:1px; border-left:2px solid transparent;
+}
+.side a.item:hover{background:var(--line-2); text-decoration:none; color:var(--ink)}
+.side a.item.on{background:var(--accent-soft); color:var(--accent); font-weight:600; border-left-color:var(--accent)}
+.side a.item i{font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:11.5px; margin-right:7px}
+.side a.item.on i{color:var(--accent)}
+.side-sub{padding:4px 0 8px 14px}
+.side-sub a{display:block; font-size:12.5px; color:var(--ink-3); padding:3px 8px; border-radius:5px; line-height:1.5}
+.side-sub a:hover{color:var(--accent); background:var(--line-2); text-decoration:none}
+.side-foot{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-3); line-height:1.7}
+
+/* ---------- 主体 ---------- */
+.main{flex:1 1 auto; min-width:0; padding:44px 56px 120px; max-width:940px}
+.crumb{font-size:12.5px; color:var(--ink-3); margin-bottom:20px; letter-spacing:.02em}
+.crumb a{color:var(--ink-3)}
+.crumb a:hover{color:var(--accent)}
+article h1{
+  font-size:30px; line-height:1.35; margin:0 0 10px; letter-spacing:-.01em; font-weight:750;
+  padding-bottom:18px;
+}
+article>blockquote:first-of-type{
+  margin:0 0 34px; padding:16px 20px; background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0; color:#2b3d7a; font-size:15px; line-height:1.8;
+}
+article>blockquote:first-of-type p{margin:0}
+article h2{
+  font-size:22px; margin:52px 0 16px; padding-top:16px; border-top:1px solid var(--line);
+  font-weight:700; letter-spacing:-.005em;
+}
+article h2:first-of-type{border-top:none; padding-top:0; margin-top:34px}
+article h3{font-size:17.5px; margin:32px 0 10px; font-weight:650; color:#2c333d}
+article h4{font-size:15.5px; margin:24px 0 8px; font-weight:650; color:var(--ink-2)}
+article p{margin:0 0 17px}
+article strong{font-weight:680; color:#12161c}
+article em{font-style:normal; color:var(--accent-2); font-weight:600}
+article ul,article ol{margin:0 0 18px; padding-left:24px}
+article li{margin-bottom:7px}
+article li::marker{color:var(--ink-3)}
+article hr{border:none; border-top:1px solid var(--line); margin:40px 0}
+article blockquote{
+  margin:0 0 20px; padding:14px 20px; background:#f5f6f8; border-left:3px solid #ccd2dc;
+  border-radius:0 8px 8px 0; color:var(--ink-2); font-size:15px;
+}
+article blockquote p:last-child{margin-bottom:0}
+article a{text-decoration:underline; text-underline-offset:3px; text-decoration-color:#c3cde8}
+article pre{
+  background:#f7f8fa; border:1px solid var(--line); border-radius:var(--radius);
+  padding:16px 18px; overflow-x:auto; font-family:var(--mono); font-size:13px;
+  line-height:1.75; color:#333b47; margin:0 0 22px;
+}
+article code{font-family:var(--mono); font-size:.89em; background:#f0f2f5; padding:2px 5px; border-radius:4px; color:#3c4553}
+article pre code{background:none; padding:0; font-size:13px; color:inherit}
+article table{
+  width:100%; border-collapse:separate; border-spacing:0; margin:0 0 24px; font-size:14.5px;
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+}
+article thead th{background:#f4f6f9; text-align:left; padding:11px 14px; font-weight:680; font-size:13.5px; color:#333b47; border-bottom:1px solid var(--line)}
+article tbody td{padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top; line-height:1.7}
+article tbody tr:last-child td{border-bottom:none}
+article tbody tr:nth-child(even){background:#fcfcfd}
+
+/* ---------- 图示套件 ---------- */
+.dg{margin:26px 0; padding:22px 20px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); overflow-x:auto}
+.dg-flow,.dg-seq{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+.dg-col{display:flex; flex-direction:column; align-items:center; gap:8px}
+.dg-box{padding:10px 16px; background:#fff; border:1px solid #d6dae0; border-radius:8px; font-size:14px; color:var(--ink); line-height:1.5; white-space:nowrap; text-align:center}
+.dg-box small{display:block; font-size:12px; color:var(--ink-3); font-weight:400; margin-top:2px; white-space:nowrap}
+.dg-box.dg-hl small{color:#4b63b8}
+.dg-box.dg-alt small{color:#a1742f}
+.dg-hl{background:var(--accent-soft); border-color:#9db4f0; color:#1b3a8f; font-weight:650}
+.dg-alt{background:var(--accent-2-soft); border-color:#e8c88a; color:#8a5b12}
+.dg-arw{color:#9aa4b2; font-size:16px; white-space:nowrap}
+.dg-arw-h{font-size:12.5px; color:#667085; white-space:nowrap}
+.dg-stack{display:flex; flex-direction:column; gap:10px}
+.dg-layer{padding:12px 16px; background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; font-size:14.5px; line-height:1.6}
+.dg-layer:nth-child(2){border-left-color:#7b93e8}
+.dg-layer:nth-child(3){border-left-color:#a8b7ef}
+.dg-layer:nth-child(4){border-left-color:#c9d3f5}
+.dg-tag{display:inline-block; min-width:76px; color:var(--accent); font-weight:700; margin-right:10px; font-size:12.5px; letter-spacing:.02em}
+.dg-vs{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.dg-col-head{background:var(--accent-soft); padding:10px 14px; font-weight:700; font-size:14px; color:#1b3a8f; line-height:1.5}
+.dg-alt-head{background:var(--accent-2-soft); color:#8a5b12}
+.dg-cell{background:#fff; padding:10px 14px; font-size:14px; line-height:1.65}
+.dg-cell.dg-alt{background:#fffdf8}
+.dg-act{padding:8px 14px; border-radius:999px; background:#fff; border:1px solid #d6dae0; font-size:13.5px; line-height:1.4; white-space:nowrap}
+
+/* ---------- 章节内导航 ---------- */
+.tocbox{margin:0 0 30px; padding:14px 18px; background:#f8f9fb; border:1px solid var(--line); border-radius:var(--radius); font-size:13.5px}
+.tocbox b{display:block; font-size:11.5px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.tocbox ul{margin:0; padding:0; list-style:none; columns:2; column-gap:26px}
+.tocbox li{margin-bottom:5px; break-inside:avoid}
+.tocbox a{color:var(--ink-2)}
+.tocbox a:hover{color:var(--accent)}
+
+/* ---------- 上下页 ---------- */
+.pager{display:flex; gap:14px; margin-top:64px; padding-top:26px; border-top:1px solid var(--line)}
+.pager a{
+  flex:1; padding:14px 18px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  font-size:13.5px; color:var(--ink-2); line-height:1.6;
+}
+.pager a:hover{border-color:#b9c4e4; text-decoration:none; background:#fcfdff}
+.pager a span{display:block; font-size:11px; letter-spacing:.14em; color:var(--ink-3); text-transform:uppercase; margin-bottom:3px}
+.pager a b{color:var(--ink); font-weight:650}
+.pager a.next{text-align:right}
+
+/* ---------- 封面 ---------- */
+.cover{padding:0}
+.cover .hero{padding:80px 0 40px; border-bottom:1px solid var(--line); margin-bottom:44px}
+.cover .kicker{font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; text-transform:uppercase; margin-bottom:16px}
+.cover h1{font-size:44px; line-height:1.25; margin:0 0 18px; letter-spacing:-.02em; font-weight:800}
+.cover .sub{font-size:18px; color:var(--ink-2); line-height:1.7; max-width:620px}
+.cover .meta{margin-top:30px; display:flex; gap:26px; flex-wrap:wrap; font-size:13px; color:var(--ink-3)}
+.cover .meta b{display:block; color:var(--ink); font-size:20px; font-weight:700; margin-bottom:2px}
+.readme{margin:0 0 44px; display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.readme>div{background:var(--panel); padding:20px 22px}
+.readme h3{margin:0 0 10px; font-size:15px; font-weight:700}
+.readme ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-2); line-height:1.75}
+.readme li{margin-bottom:6px}
+.partblock{margin-bottom:34px}
+.partblock h2{font-size:19px; margin:0 0 4px; font-weight:700}
+.partblock .pd{font-size:13px; color:var(--ink-3); margin-bottom:14px}
+.chlist{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.chlist a{
+  display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); font-size:14.5px; color:var(--ink); line-height:1.6;
+}
+.chlist a:hover{border-color:#b9c4e4; background:#fcfdff; text-decoration:none}
+.chlist a i{font-style:normal; font-family:var(--mono); font-size:11.5px; color:var(--accent); display:block; margin-bottom:3px}
+.chlist a small{display:block; color:var(--ink-3); font-size:12.5px; margin-top:3px}
+
+@media (max-width:1080px){
+  .layout{display:block}
+  .side{position:static; width:auto; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:20px 22px 24px}
+  .main{padding:30px 22px 90px}
+  .cover h1{font-size:32px}
+  .readme,.chlist{grid-template-columns:1fr}
+  .tocbox ul{columns:1}
+  .dg-vs{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+<div class="layout">
+  <aside class="side"><a class="side-brand" href="index.html"><b>智能体运行时原理</b><span>从 LangChain 到 LangGraph，及可迁移的 Agent 设计法则</span></a><div class="side-part">第一部分　问题空间<em>框架为什么必然出现</em></div><a class="item" href="ch01-from-api-to-agent.html"><i>01</i>从「调用模型」到「编排智能体」</a><a class="item" href="ch02-first-principles.html"><i>02</i>LLM 应用的第一性原理</a><a class="item" href="ch03-what-abstractions-do.html"><i>03</i>框架抽象的本质：把什么变成接口</a><a class="item" href="ch04-family-and-evolution.html"><i>04</i>LangChain 家族的全景与演进脉络</a><div class="side-part">第二部分　LangChain 的抽象原理<em>组件、协议与编排</em></div><a class="item" href="ch05-runnable-protocol.html"><i>05</i>Runnable 协议：统一执行语义</a><a class="item" href="ch06-lcel-principles.html"><i>06</i>LCEL：声明式编排的原理</a><a class="item" href="ch07-model-adaptation.html"><i>07</i>模型与消息：LLM 适配层的原理</a><a class="item" href="ch08-prompt-and-parsing.html"><i>08</i>提示与解析：IO 边界的类型契约</a><a class="item" href="ch09-rag-principles.html"><i>09</i>检索增强（RAG）的原理</a><div class="side-part">第三部分　LangGraph：从链到图<em>状态、执行与持久化</em></div><a class="item on" href="ch10-why-graphs.html"><i>10</i>为什么链不够：Agent 循环的本质</a><a class="item" href="ch11-state-and-channels.html"><i>11</i>状态与通道：图的数据模型</a><a class="item" href="ch12-execution-engine.html"><i>12</i>执行引擎：超步模型与调度</a><a class="item" href="ch13-persistence-and-checkpoints.html"><i>13</i>持久化与检查点：Agent 能力的地基</a><a class="item" href="ch14-interrupts-and-hitl.html"><i>14</i>中断与人在回路</a><a class="item" href="ch15-multi-agent-topologies.html"><i>15</i>多智能体拓扑</a><div class="side-part">第四部分　依赖族与生态<em>契约、协议与观测</em></div><a class="item" href="ch16-schema-contracts.html"><i>16</i>Schema 契约与 Pydantic 的角色</a><a class="item" href="ch17-protocols-mcp.html"><i>17</i>协议层：工具与智能体的标准化</a><a class="item" href="ch18-observability-and-eval.html"><i>18</i>可观测性与评估</a><a class="item" href="ch19-deployment.html"><i>19</i>部署与运行时形态</a><div class="side-part">第五部分　原理迁移<em>超越具体框架</em></div><a class="item" href="ch20-agent-loop-patterns.html"><i>20</i>Agent Loop 的通用模式</a><a class="item" href="ch21-context-engineering.html"><i>21</i>上下文工程</a><a class="item" href="ch22-design-your-own-harness.html"><i>22</i>如果你从零设计一个 Harness</a><a class="item" href="ch23-conclusion.html"><i>23</i>结语：框架会变，原理不会</a><div class="side-part">附录<em>速查与自检</em></div><a class="item" href="apa-glossary.html"><i>A</i>附录 A　术语表</a><a class="item" href="apb-checklist.html"><i>B</i>附录 B　原理速查与自检清单</a>
+    <div class="side-foot">共 23 章 + 2 个附录 · 原理优先<br>零真实代码，只用结构示意与图示</div>
+  </aside>
+  <main class="main">
+<article>
+<h1>第 10 章　为什么链不够：Agent 循环的本质</h1>
+<div class="tocbox"><b>本章小节</b>
+<ul>
+<li><a href="#_1">引子</a></li>
+<li><a href="#dag">DAG 的三重天花板</a></li>
+<li><a href="#_2">智能体循环的最小模型</a></li>
+<li><a href="#_3">用无环图模拟循环的代价</a></li>
+<li><a href="#_4">图作为通用计算模型</a></li>
+<li><a href="#_5">什么场景仍然是链的天下</a></li>
+<li><a href="#_6">常见误区与排查</a></li>
+<li><a href="#_7">本章要点</a></li>
+<li><a href="#_8">迁移视角：如果不用这个框架</a></li>
+</ul>
+</div>
+
+
+<blockquote>
+<p>循环 + 状态 + 终止条件 = 智能体。DAG 表达不了这三者中的任何完整一环。</p>
+</blockquote>
+<h2 id="_1">引子</h2>
+<p>有一个问题几乎每个人都会问一次：既然已经有了一套组合链路的机制，为什么还要再学一套图？</p>
+<p>一个常见的回答是"因为图支持循环"。这个回答是对的，但太浅了——它没有说明为什么循环必须靠一套新模型来实现，而不是在原有机制上加个功能。</p>
+<p>真正的答案要从一个更基本的地方找。链路的本质是一个<strong>函数</strong>：给定输入，推导输出。它的结构在执行前就完全确定，执行过程是一次性的、无回边的推导。而智能体的本质是一个<strong>过程</strong>：它要在不确定的外部环境中，通过一系列观察与行动的交替，逐步逼近目标。这个过程有两个特征与函数式推导根本不同——<strong>它不知道要走几步</strong>，而且<strong>它的每一步都依赖外部的真实反馈</strong>。</p>
+<p>这一章要说明：这两个特征为什么把"链"这种模型逼到了极限，以及新的模型必须包含哪些要素才算完整。这是第三部分的开篇，也是全书从"组件"转向"运行时"的转折点。</p>
+<h2 id="dag">DAG 的三重天花板</h2>
+<p>有向无环图（DAG，也就是链的组合结构的数学名称）有三个固有性质。每一个性质在"转换问题"里都是优点，在"过程问题"里都是天花板。</p>
+<p><strong>天花板一：不可回边。</strong> DAG 的定义要求无环，也就是路径不能回到已经经过的节点。这在转换问题里是优点——它保证了执行一定终止，不需要额外设计终止条件。但在过程问题里，回边恰恰是核心能力："这次检索没找到有用信息，换个查询再来一次"是回边；"工具出错了，重新组织参数再试一次"是回边；"审阅者认为不合格，退回重做"也是回边。<strong>没有回边，就没有重试、没有迭代、没有自我修正。</strong></p>
+<p><strong>天花板二：执行次数固定。</strong> DAG 里每个节点在一条路径上最多出现一次，因此执行次数由拓扑结构决定，而不是由运行时状态决定。这意味着你无法表达"根据情况决定要不要重复某几步"——而这恰恰是智能体最需要的能力：简单问题走两步就够，复杂问题可能需要转十轮。</p>
+<p><strong>天花板三：无法在中间改变方向。</strong> DAG 的边在声明时确定。虽然可以用条件分支实现"走这条路还是那条路"，但分支的<strong>目的地必须是预先声明好的有限集合</strong>。而真实场景里，下一步做什么经常取决于新出现的信息（比如模型读了一份文档，发现需要去查另一个完全没预料到的系统）。这类"运行时才知道要去哪"的需求，用预先声明的边表达不了，只能用一些变通手段硬凑。</p>
+<div class="dg">
+  <div class="dg-vs">
+    <div class="dg-col-head">DAG（链）</div>
+    <div class="dg-col-head dg-alt-head">过程问题需要什么</div>
+    <div class="dg-cell">路径无环，保证终止</div>
+    <div class="dg-cell dg-alt">需要回边来重试与迭代</div>
+    <div class="dg-cell">执行次数由拓扑决定</div>
+    <div class="dg-cell dg-alt">执行次数由运行时状态决定</div>
+    <div class="dg-cell">分支目的地声明时确定</div>
+    <div class="dg-cell dg-alt">下一步可能由运行期新信息决定</div>
+  </div>
+</div>
+
+<p>值得注意的是，这三条天花板不是"实现得不好"，而是模型的定义决定的。你不能在不破坏 DAG 定义的情况下给它加上回边——一旦允许环，终止性就不再由结构保证，你就必须引入一套全新的机制来保证它不会无限转下去（这套机制就是第 12 章讲的终止控制）。<strong>所以循环不是一个功能，而是一种新的责任。</strong></p>
+<h2 id="_2">智能体循环的最小模型</h2>
+<p>剥掉所有框架术语，智能体的核心是一个四步循环。</p>
+<div class="dg">
+  <div class="dg-flow">
+    <div class="dg-box">观察<br><small>当前状态与外部反馈</small></div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box">决策<br><small>下一步做什么</small></div>
+    <div class="dg-arw">→</div>
+    <div class="dg-box dg-alt">行动<br><small>调用工具，产生副作用</small></div>
+    <div class="dg-arw">↻</div>
+    <div class="dg-box dg-hl">回到观察</div>
+  </div>
+</div>
+
+<p>这四个步骤里，<strong>决策是唯一由模型承担的部分</strong>，其余三步都由宿主负责。这个分工非常重要，因为它划定了"哪些问题应该靠改提示解决、哪些必须靠改架构解决"。</p>
+<p>观察阶段的职责是<strong>装配上下文</strong>：把当前状态、上一步的结果、相关的历史整理成模型能用的形式。它对应第 21 章要讲的上下文工程。观察阶段的失误表现为"模型不知道某件事"，而这件事其实系统里有。</p>
+<p>决策阶段的职责是<strong>选择下一步动作</strong>。这一阶段的输出不只是"调用哪个工具"，还包括"要不要结束"。这里有一个关键设计点：<strong>结束必须是一种显式动作</strong>，而不是"模型不再输出工具调用"这种隐含信号。把结束建模成动作，才能对它施加统一的控制（比如强制在某些条件下不允许结束）。</p>
+<p>行动阶段的职责是<strong>执行与记录</strong>。它包含三件容易被偷懒的事：执行前的校验（参数是否合法、是否有权限、是否超过限额）、执行中的控制（超时、并发、限流）、执行后的记录（结果、耗时、副作用发生的事实）。<strong>副作用是否已经发生，必须被记录</strong>——这是第 13 章幂等性的基础。</p>
+<p>回到观察这一步常常被忽略，但它承担着"把行动结果转化为下一轮输入"的职责。这里有一个设计选择：行动结果是否原样进入下一轮？通常不该。过长的结果需要裁剪，结构化结果需要格式化，失败的结果需要附加上下文（"这次调用失败了，原因是……"）而不是只给一个错误码。</p>
+<h2 id="_3">用无环图模拟循环的代价</h2>
+<p>技术上，用链式结构模拟循环是可行的：让某个组件内部调用自己，或者在组件内部写一个循环。很多项目确实这么做了。代价有四个，而且都会在规模变大后暴露。</p>
+<p><strong>代价一：状态无处安放。</strong> 循环过程中的状态（当前是第几轮、已经尝试过什么、累积了什么信息）只能存在于那个组件的局部变量里，或者被塞进一个被到处传递的对象。前者的后果是无法被外部观察和干预；后者的后果是职责混乱——一个"局部循环"的状态变成了全局依赖。</p>
+<p><strong>代价二：无法暂停。</strong> 这在纸面上听起来不急，但在实际业务里是硬需求。一个动作需要人工确认、一个流程需要等待外部系统回调、一个任务需要跨天执行——这些场景都要求"停下来、保存、以后接着做"。局部循环处在一次函数调用中间，无法被安全地冻结和恢复。</p>
+<p><strong>代价三：轨迹不可读。</strong> 局部循环产生的执行轨迹是嵌套的调用栈，而不是平坦的步骤序列。这会导致两个后果：观测工具难以统一展示；评估时难以按步骤打分（因为"步骤"这个概念在嵌套结构里不是一等概念）。</p>
+<p><strong>代价四：无法从中间恢复。</strong> 这是代价二的直接推论，但值得单独列出，因为它决定了系统运维的能力上限。不能从中间恢复，意味着任何一次失败都要从头重跑；如果链路里有副作用，从头重跑就会产生重复副作用。于是你会被迫加去重逻辑，而去重逻辑在没有状态记录的情况下很难写对。</p>
+<p>一句话总结：<strong>用无环图模拟循环，本质是把运行时问题降级成了组件内部的实现细节。</strong> 实现细节无法被统一治理，也无法被外部工具消费——这就是为什么它注定只能撑过原型阶段。</p>
+<h2 id="_4">图作为通用计算模型</h2>
+<p>一旦承认需要"有状态、可循环、可暂停、可恢复"的执行模型，剩下的选择其实不多。业界的共识落在同一个地方：<strong>把执行描述成图，把状态放在图的中心。</strong></p>
+<p>这个模型的要素可以列成一棵简单的树：</p>
+<p><strong>结构要素：</strong> 节点（做事的单位）、边（连接的规则）、条件边（运行期决定的分支）、入口与出口。</p>
+<p><strong>状态要素：</strong> 共享状态（唯一的真相来源）、状态更新（节点产出增量而非全量）、合并规则（并发更新如何归并）。</p>
+<p><strong>执行要素：</strong> 调度（谁在什么时候被激活）、同步边界（并行的节点何时算全体完成）、终止判定（什么时候算结束）。</p>
+<p><strong>持久化要素：</strong> 快照（在什么粒度保存）、标识（同一会话如何关联）、恢复（如何从某次快照继续）。</p>
+<p><strong>交互要素：</strong> 暂停点（在哪里可以中断）、恢复协议（恢复时需要什么信息）、外部输入如何注入。</p>
+<p>这份清单的价值在于：<strong>它是一个完备性检查表。</strong> 当你评估任何一个宣称支持智能体编排的方案时，可以逐项对照。凡是缺项的方案，都会在某个具体场景下暴露——缺少合并规则的会在并发时丢数据，缺少同步边界的会在并行时结果不稳定，缺少持久化粒度的会在中断后无法精确恢复。</p>
+<div class="dg">
+  <div class="dg-stack">
+    <div class="dg-layer"><span class="dg-tag">结构</span>节点 · 边 · 条件边 · 入口出口</div>
+    <div class="dg-layer"><span class="dg-tag">状态</span>共享状态 · 增量更新 · 合并规则</div>
+    <div class="dg-layer"><span class="dg-tag">执行</span>调度 · 同步边界 · 终止判定</div>
+    <div class="dg-layer"><span class="dg-tag">持久化</span>快照粒度 · 会话标识 · 恢复方式</div>
+    <div class="dg-layer"><span class="dg-tag">交互</span>暂停点 · 恢复协议 · 外部输入注入</div>
+  </div>
+</div>
+
+<h2 id="_5">什么场景仍然是链的天下</h2>
+<p>这一节是必要的平衡。图不是升级版，图是另一个工具。</p>
+<p><strong>保持用链的场景</strong>有明确特征：执行路径可预先确定，不存在"看结果再决定"；一次请求在秒级完成，失败重试是成本可接受的；没有人机交互的暂停需求；不需要从中间恢复。</p>
+<p>典型的例子是：一次检索加一次生成的问答；批量的文本分类；固定格式的信息抽取；固定流程的文档处理。这些场景用图带来的唯一效果是复杂度上升——你会为了一个不需要循环的流程去定义状态、定义节点、定义边，然后发现所有边都是无条件的。</p>
+<p><strong>必须用图的场景</strong>的特征同样明确：存在依赖中间结果的重复动作；存在需要等待外部条件的暂停；单个任务的生命周期可能超过一次请求；需要把执行过程作为可分析对象来评估与调试。</p>
+<p>判断的方法很直接，只问两个问题：<strong>第一，我能不能在写代码时就画出完整的执行路径？</strong> 能，链就够。<strong>第二，这个执行的中间状态需不需要在进程之外存活？</strong> 不需要，链就够。两个问题的答案都是"不能/需要"时，才应该上图。</p>
+<p>把这两个问题展开成一张可逐项对照的判断表：</p>
+<table>
+<thead>
+<tr>
+<th>判断维度</th>
+<th>链就够用</th>
+<th>应该上图</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>执行路径</td>
+<td>写代码时就能完整画出</td>
+<td>依赖中间结果，运行期才确定</td>
+</tr>
+<tr>
+<td>重复动作</td>
+<td>一次通过，不需要重来</td>
+<td>需要"看结果再决定要不要再来一轮"</td>
+</tr>
+<tr>
+<td>中间状态</td>
+<td>无需在进程之外存活</td>
+<td>需跨请求、跨进程、跨天存活</td>
+</tr>
+<tr>
+<td>暂停需求</td>
+<td>无，一次请求内跑完</td>
+<td>需人工确认或等待外部回调</td>
+</tr>
+<tr>
+<td>失败代价</td>
+<td>从头重跑可以接受</td>
+<td>重跑成本高，或重跑会产生重复副作用</td>
+</tr>
+<tr>
+<td>典型场景</td>
+<td>检索后生成问答、批量分类、固定格式抽取</td>
+<td>多轮工具调用、长任务研究、带审批的流程</td>
+</tr>
+</tbody>
+</table>
+<p>这张表有个用法：<strong>不要问"哪个更强"，而是逐行填。填完会发现大多数行的答案都落在同一列，而落在哪一列，就是你该用的模型。</strong> 如果两列都有，那就不是二选一——把需要循环的那一段单独拆成子图，其余部分继续留在链上，这是第 15 章要讲的组合方式。</p>
+<p>有一个常见的误判是"因为将来可能需要循环，所以现在就用图"。这个理由通常不成立，因为从链迁移到图的成本远低于一开始就过度设计的成本——尤其是当你的链写得很干净、组件契约清晰的时候。<strong>设计的顺序应该是：先把链写对，等到循环需求真实出现、并且开始带来上面那四个代价时，再把需要循环的那一段升级成图。</strong></p>
+<h2 id="_6">常见误区与排查</h2>
+<ul>
+<li><strong>"图就是支持循环的链"</strong> → 症状：只把流程画成节点和边，但仍然把所有逻辑写在一个大节点里。根因：没有理解图带来的是状态模型的改变。修法：把状态设计当作图设计的第一步。</li>
+<li><strong>"在组件里写个循环也能实现重试，够用了"</strong> → 症状：需要人工介入或断点续跑时发现做不到，只能重构。根因：把运行时问题降级为组件实现细节。修法：当暂停或恢复需求出现时，及时升级执行模型。</li>
+<li><strong>"有环就有风险，还是保持无环比较安全"</strong> → 症状：为了不引入环，用条件分支堆出很深的嵌套结构。根因：把"回边"等同于"失控"。修法：环的风险靠终止控制管理（跳数上限、预算、进展检测），而不是靠回避。</li>
+<li><strong>"每个节点都写成一个完整流程"</strong> → 症状：状态变成一个巨大的对象，节点之间耦合严重，单个节点难以测试。根因：节点粒度失衡。修法：让节点是"可独立测试的工作单元"，状态是它明确声明需要与产出的部分。</li>
+<li><strong>"既然图更强，那全部重写成图"</strong> → 症状：项目周期延长，收益不明显。根因：把工具升级当成了目标。修法：只把真正需要循环、暂停、恢复的部分改成图。</li>
+<li><strong>"模型能自己决定什么时候结束"</strong> → 症状：偶发的无意义循环或过早结束。根因：终止是隐含信号而非显式动作。修法：把结束建模为一种动作，并施加外部约束。</li>
+</ul>
+<h2 id="_7">本章要点</h2>
+<ul>
+<li>链的本质是函数（给定输入推导输出），智能体的本质是过程（在不确知步数的情况下逐步逼近目标）。这是模型级差异。</li>
+<li>DAG 的三重天花板：不可回边、执行次数固定、分支目的地必须预先声明。</li>
+<li>循环不是功能而是责任：一旦允许环，终止性就不再由结构保证，必须由显式的终止控制承担。</li>
+<li>智能体循环的最小模型是"观察 → 决策 → 行动 → 回到观察"；模型只负责决策，其余三步是宿主的责任。</li>
+<li>结束必须建模成显式动作，而不是"没有更多动作"这一隐含信号。</li>
+<li>用无环图模拟循环会付出四个代价：状态无处安放、无法暂停、轨迹不可读、无法从中间恢复。</li>
+<li>完整的执行模型需要五类要素：结构、状态、执行、持久化、交互。这份清单可当作评估任何编排方案的完备性检查表。</li>
+<li>判断是否需要上图只问两句：执行路径能否在写代码时完全画出？中间状态是否需要在进程之外存活？</li>
+</ul>
+<h2 id="_8">迁移视角：如果不用这个框架</h2>
+<p>这一章的结论可以完全脱离 LangGraph 存在：<strong>当一个问题需要"不确定步数的迭代 + 可持久化的中间状态 + 外部条件的介入"时，它就已经不再是一个函数，而是一个长时运行的过程。</strong></p>
+<p>这个判断在别处也成立。批处理脚本变成流处理任务时会遇到同一个转折；同步的 HTTP 调用变成"提交任务后轮询"时会遇到；简单的定时任务变成带审批流程的工作流时会遇到。每一次，你都会发现同样的事情发生：需要显式的状态、需要终止控制、需要持久化边界、需要恢复协议。</p>
+<p>所以"图"在这里不是指某个框架的类，而是指一种组织方式：<strong>把控制流从代码里抽出来，变成可被检查、可被持久化、可被干预的数据。</strong> 一旦控制流成为数据，它就能被可视化、能做时间旅行、能被人打断再继续——这三种能力在组件模型里都无法获得。</p>
+<p>如果你正在自研，这份"五类要素"清单可以直接当设计大纲用。它不规定实现方式，只规定必须回答的问题。一个有用的自检方式是：把每个要素写成一个问句（"并发写同一字段时如何合并？""从哪一步可以暂停？""恢复时需要哪些信息？"），然后测试你的设计能不能回答。答不上来的那一项，就是未来某个凌晨会出问题的地方。</p>
+<div class="pager"><a class="prev" href="ch09-rag-principles.html"><span>上一章</span><b>第 9 章　检索增强（RAG）的原理</b></a><a class="next" href="ch11-state-and-channels.html"><span>下一章</span><b>第 11 章　状态与通道：图的数据模型</b></a></div>
+</article>
+  </main>
+</div>
+</body>
+</html>
